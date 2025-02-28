@@ -1,10 +1,10 @@
-
 export interface IDBClientOptions {
-  region: string;
-  endpoint: string;
-  credentials: {
+  region?: string;
+  credentials?: {
     accessKeyId: string;
     secretAccessKey: string;
-    sessionToken?: string;
-  }
+  };
+  webhooksTableName: string;
+  regexTableName: string;
+  serversTableName: string;
 }
