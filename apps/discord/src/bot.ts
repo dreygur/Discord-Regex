@@ -1,0 +1,56 @@
+import { Client, Events, GatewayIntentBits, Interaction, Message, MessageFlags, OmitPartialGroupDMChannel } from 'discord.js';
+import { commands } from './commands';
+import { regexHandler } from './regex-handler';
+
+// Discord Bot client
+export const client: Client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildMembers,
+  ]
+});
+
+// Read TEXT message
+client.on(Events.MessageCreate, (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
+  if (message.author.bot) return;
+  regexHandler(message);
+});
+
+// Register all the slash commands
+client.on(Events.InteractionCreate, async (interaction: Interaction) => {
+  if (interaction.isAutocomplete()) {
+    // Do the autocompletion here
+    const focusValue = interaction.options.getFocused(true);
+    console.log({ focusValue });
+    const choices = ['Popular Topics: Threads', 'Sharding: Getting started', 'Library: Voice Connections', 'Interactions: Replying to slash commands', 'Popular Topics: Embed preview'];
+
+    await interaction.respond(
+      choices.map(choice => ({ name: choice, value: choice }))
+    );
+
+  }
+  if (interaction.isChatInputCommand()) {
+    const command = commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+      await command.command.execute(interaction);
+    } catch (err) {
+      console.error(err);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: "An error occurred while executing the command.",
+          flags: MessageFlags.Ephemeral
+        });
+      } else {
+        await interaction.reply({
+          content: "An error occurred while executing the command.",
+          flags: MessageFlags.Ephemeral
+        });
+      }
+    }
+  }
+});
