@@ -22,7 +22,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     } else {
-      router.push("/login");
+      // TODO
+      // router.push("/login");
     }
   }, []);
 
