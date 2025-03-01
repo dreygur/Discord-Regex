@@ -31,7 +31,6 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isAutocomplete()) {
     // Do the autocompletion here
     const focusValue = interaction.options.getFocused(true);
-    console.log({ focusValue });
     const choices = ['Popular Topics: Threads', 'Sharding: Getting started', 'Library: Voice Connections', 'Interactions: Replying to slash commands', 'Popular Topics: Embed preview'];
 
     await interaction.respond(
