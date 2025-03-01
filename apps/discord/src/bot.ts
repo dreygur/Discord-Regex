@@ -1,6 +1,7 @@
-import { Client, Events, GatewayIntentBits, Interaction, Message, MessageFlags, OmitPartialGroupDMChannel } from 'discord.js';
+import { Client, Events, GatewayIntentBits, Guild, Interaction, Message, MessageFlags, OmitPartialGroupDMChannel } from 'discord.js';
 import { commands } from './commands';
 import { regexHandler } from './regex-handler';
+import { database } from './database';
 
 // Discord Bot client
 export const client: Client = new Client({
@@ -17,6 +18,11 @@ export const client: Client = new Client({
 client.on(Events.MessageCreate, (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   if (message.author.bot) return;
   regexHandler(message);
+});
+
+// Save a server when the bot is connected to it
+client.on(Events.GuildCreate, async (guild: Guild) => {
+  await database.createServer(guild.id, guild.name, 'disabled', guild.memberCount, 0);
 });
 
 // Register all the slash commands

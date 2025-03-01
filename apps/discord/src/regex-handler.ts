@@ -14,6 +14,14 @@ interface IWebhook {
   url: string
 };
 
+interface IServer {
+  serverId: string;
+  name: string;
+  status: "active" | "disabled";
+  totalUsers: number;
+  totalChannels: number;
+}
+
 // The fetch Queue
 export const queue = new FetchQueue();
 
@@ -29,6 +37,7 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
 
   var patterns: IRegexGuild[] | undefined = cache.get(message.guildId as string);
   var webhooks: IWebhook[] | undefined = cache.get('webhooks');
+  var servers: IServer | undefined = cache.get(`${message.guildId}_server`);
   if (!patterns) {
     patterns = await database.getRegexesByServer(message.guildId as string);
     cache.set(message.guildId as string, patterns);
@@ -39,7 +48,12 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
     cache.set('webhooks', webhooks);
   }
 
-  if (!patterns) return;
+  if (!servers) {
+    const server = await database.getServer(message.guildId as string);
+    if (server) cache.set(`${message.guildId}_server`, servers);
+  }
+
+  if (!patterns || !servers || servers.status === 'disabled') return;
 
   patterns.forEach(pattern => {
     // Check if the regex pattern matches message.content
