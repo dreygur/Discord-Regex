@@ -20,7 +20,7 @@ client.once(Events.ClientReady, (readyClient: Client<true>) => {
 
 // Login to Discord using the client token
 client
-  .login(config.token)
+  .login(config.token as string)
   .then(async () => {
     await initializeDatabase();
     await registerCommands(client);

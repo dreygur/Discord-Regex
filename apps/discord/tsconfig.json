@@ -22,6 +22,7 @@
     ]
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "../../packages/database/src/cache.ts"
   ]
 }

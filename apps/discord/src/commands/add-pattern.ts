@@ -1,7 +1,8 @@
-import { SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import type { CommandInteraction, SlashCommandStringOption } from "discord.js";
 import { BotCommand } from "../types";
 import { database } from "../database";
+import { config } from "../config";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -25,7 +26,17 @@ const command: BotCommand = {
         interaction.options.get('webhook')?.value as string
       );
 
-      await interaction.reply("Pong!");
+      const embed = new EmbedBuilder()
+        .setColor(config.color as number)
+        .setTitle('Pattern')
+        .setDescription('The following pattern added successfully')
+        .setThumbnail(config.thumbnail as string)
+        .addFields(
+          { name: 'Pattern', value: interaction.options.get('pattern')?.value as string },
+          { name: 'Webhook', value: interaction.options.get('webhook')?.value as string }
+        );
+
+      await interaction.reply({ embeds: [embed] });
     } catch (err) {
       console.error(err);
       await interaction.reply("An error occurred while adding the regex pattern.");
