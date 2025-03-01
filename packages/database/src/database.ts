@@ -304,6 +304,31 @@ class DynamoDatabase {
     } || null;
   }
 
+  async getAllServers(): Promise<{
+    serverId: string;
+    name: string;
+    status: "active" | "disabled";
+    totalUsers: number;
+    totalChannels: number;
+  }[]> {
+    try {
+      const result = await this.db.send(new ScanCommand({
+        TableName: this.serversTableName,
+      }));
+
+      return result.Items as {
+        serverId: string;
+        name: string;
+        status: "active" | "disabled";
+        totalUsers: number;
+        totalChannels: number;
+      }[];
+    } catch (error) {
+      console.error("Error fetching servers:", error);
+      throw error;
+    }
+  }
+
   async updateServer(
     serverId: string,
     updates: {

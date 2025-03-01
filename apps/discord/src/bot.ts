@@ -22,7 +22,8 @@ client.on(Events.MessageCreate, (message: OmitPartialGroupDMChannel<Message<bool
 
 // Save a server when the bot is connected to it
 client.on(Events.GuildCreate, async (guild: Guild) => {
-  await database.createServer(guild.id, guild.name, 'disabled', guild.memberCount, 0);
+  // await database.createServer(guild.id, guild.name, 'disabled', guild.memberCount, 0);
+  await database.createServer(guild.id, guild.name, 'active', guild.memberCount, 0);
 });
 
 // Register all the slash commands

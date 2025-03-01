@@ -30,9 +30,6 @@ export const cache = new Cache<any>({ defaultTtl: 10000 });
 
 // Cache All the webhooks
 export async function regexHandler(message: OmitPartialGroupDMChannel<Message<boolean>>) {
-  // Implement regex handler here
-  console.log(message.content);
-
   if (message.content.length === 0) return;
 
   var patterns: IRegexGuild[] | undefined = cache.get(message.guildId as string);
@@ -50,7 +47,10 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
 
   if (!servers) {
     const server = await database.getServer(message.guildId as string);
-    if (server) cache.set(`${message.guildId}_server`, servers);
+    if (server) {
+      cache.set(`${message.guildId}_server`, server);
+      servers = server;
+    }
   }
 
   if (!patterns || !servers || servers.status === 'disabled') return;
