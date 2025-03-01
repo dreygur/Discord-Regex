@@ -13,3 +13,12 @@ export interface QueueTask {
   resolve: (value: Response) => void;
   reject: (reason?: unknown) => void;
 }
+
+export interface CacheEntry<T> {
+  value: T;
+  expiresAt: number | null;
+}
+
+export type CacheOptions = {
+  defaultTtl?: number | null;
+};

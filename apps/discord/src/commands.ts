@@ -24,7 +24,7 @@ for (const file of commandsDirs) {
 }
 
 // Discord REST API
-const rest = new REST().setToken(config.token);
+const rest = new REST().setToken(config.token as string);
 
 export async function registerCommands(client: Client) {
   console.log("Starting");
