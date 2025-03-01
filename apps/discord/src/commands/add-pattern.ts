@@ -1,6 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import type { CommandInteraction, SlashCommandStringOption } from "discord.js";
 import { BotCommand } from "../types";
+import { database } from "../database";
 
 const command: BotCommand = {
   data: new SlashCommandBuilder()
@@ -17,7 +18,18 @@ const command: BotCommand = {
     )
   ,
   execute: async (interaction: CommandInteraction) => {
-    await interaction.reply("Pong!");
+    try {
+      await database.addRegex(
+        interaction.guildId as string,
+        interaction.options.get('pattern')?.value as string,
+        interaction.options.get('webhook')?.value as string
+      );
+
+      await interaction.reply("Pong!");
+    } catch (err) {
+      console.error(err);
+      await interaction.reply("An error occurred while adding the regex pattern.");
+    }
   },
 }
 
