@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import toast from "react-hot-toast";
 
 export default function UpdateServer({ id }: { id: string }) {
   const router = useRouter();
@@ -42,9 +43,10 @@ export default function UpdateServer({ id }: { id: string }) {
         totalUsers: server.totalUsers,
         totalChannels: server.totalChannels
       });
+      toast.success("Server updated successfully");
       router.push("/servers");
     } catch (error) {
-      alert("Error updating server");
+      toast.error("Error updating server");
       console.error(error);
     } finally {
       setLoading(false);

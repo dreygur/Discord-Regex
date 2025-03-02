@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import toast from "react-hot-toast";
 
 export default function CreateWebhook() {
   const [name, setName] = useState("");
@@ -17,16 +18,16 @@ export default function CreateWebhook() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, url })
       });
 
-      if (!res.ok) throw new Error("Failed to create webhook");
+      toast.success("Webhook created successfully", { id: "webhook" });
       router.push("/webhooks");
     } catch (error) {
-      alert("Failed to create webhook");
+      toast.error("Failed to create webhook", { id: "webhook" });
       console.error(error);
     } finally {
       setLoading(false);

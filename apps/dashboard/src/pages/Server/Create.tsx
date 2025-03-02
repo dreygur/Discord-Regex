@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import toast from "react-hot-toast";
 
 export default function CreateServer() {
   const [serverId, setServerId] = useState("");
@@ -18,7 +19,6 @@ export default function CreateServer() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!serverId || !name) return alert("Server ID and Name are required.");
 
     setLoading(true);
     try {
@@ -28,11 +28,12 @@ export default function CreateServer() {
         body: JSON.stringify({ serverId, name, status, totalUsers, totalChannels })
       });
       if (response.ok) {
+        toast.success("Server Created Successfully");
         router.push("/");
       }
     } catch (error) {
       console.log(error);
-      alert("Failed to create server.");
+      toast.error("Failed to create server.");
     } finally {
       setLoading(false);
     }

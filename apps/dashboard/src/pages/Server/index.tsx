@@ -94,7 +94,7 @@ export default function Server({ data }: { data: DiscordServer[] }) {
 
   return (
     <div className="p-6">
-      <h1 className="text-primary text-2xl font-bold mb-4 text-primary">Discord Servers</h1>
+      <h1 className="text-2xl font-bold mb-4 text-primary">Discord Servers</h1>
       <DataTable<DiscordServer> columns={columns} data={servers} />
       {/* <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>

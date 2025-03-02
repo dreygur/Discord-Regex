@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Loading from "../../app/loading";
+import toast from "react-hot-toast";
 
 export default function UpdateWebhook({ id }: { id: string }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function UpdateWebhook({ id }: { id: string }) {
       const data = await res.json();
       setWebhook(data);
     } catch (error) {
-      alert("Error fetching webhook data");
+      toast.error("Error fetching webhook data", { id: "webhook" });
       console.error(error);
     }
   };
@@ -41,9 +42,10 @@ export default function UpdateWebhook({ id }: { id: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: webhook.name, url: webhook.url })
       });
+      toast.success("Webhook updated successfully", { id: "webhook" });
       router.push("/webhooks");
     } catch (error) {
-      alert("Error updating webhook");
+      toast.error("Error updating webhook", { id: "webhook" });
       console.error(error);
     } finally {
       setLoading(false);
