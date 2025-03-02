@@ -1,178 +1,149 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import { Construct } from 'constructs';
 
-class DiscordBotStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+export class DiscordBotStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Infrastructure setup
-    const vpc = new ec2.Vpc(this, 'BotVPC', {
-      maxAzs: 2,
-      natGateways: 1, // Single NAT gateway for cost optimization
-      subnetConfiguration: [
-        {
-          cidrMask: 24,
-          name: 'public',
-          subnetType: ec2.SubnetType.PUBLIC,
-        },
-        {
-          cidrMask: 24,
-          name: 'private',
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-        }
-      ]
+    // 1. Create DynamoDB Table
+    const table = new dynamodb.Table(this, 'BotTable', {
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+
+    // 2. Create ECR Repository for Docker images
+    const ecrRepo = new ecr.Repository(this, 'BotEcrRepo', {
+      repositoryName: 'discord-bot',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    // 3. Create ECS Cluster
+    const vpc = new ec2.Vpc(this, 'BotVpc', { maxAzs: 2 });
     const cluster = new ecs.Cluster(this, 'BotCluster', { vpc });
-    const repository = new ecr.Repository(this, 'BotECR');
-    const secret = secretsmanager.Secret.fromSecretNameV2(this, 'BotSecret', 'discord-bot-secrets');
 
-    // ECS Task Definition
-    const taskRole = new iam.Role(this, 'BotTaskRole', {
-      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-    });
-    secret.grantRead(taskRole);
+    // 4. Create Task Definition with placeholder image
+    const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
 
-    // Grant DynamoDB permissions to the task role
-    taskRole.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'dynamodb:GetItem',
-        'dynamodb:PutItem',
-        'dynamodb:UpdateItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:Query',
-        'dynamodb:Scan',
-        'dynamodb:BatchGetItem',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:DescribeTable',
-        'dynamodb:CreateTable'
-      ],
-      resources: [
-        `arn:aws:dynamodb:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:table/Webhooks`,
-        `arn:aws:dynamodb:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:table/RegexPatterns`,
-        `arn:aws:dynamodb:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:table/Servers`
-      ],
-    }));
-
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef', {
-      memoryLimitMiB: 512,
-      cpu: 256,
-      taskRole,
-    });
-
-    taskDefinition.addContainer('BotContainer', {
-      image: ecs.ContainerImage.fromEcrRepository(repository, 'latest'),
-      secrets: {
-        TOKEN: ecs.Secret.fromSecretsManager(secret, 'TOKEN'),
-        REGION: ecs.Secret.fromSecretsManager(secret, 'REGION'),
-        ENDPOINT: ecs.Secret.fromSecretsManager(secret, 'ENDPOINT'),
-        ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(secret, 'ACCESS_KEY_ID'),
-        SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(secret, 'SECRET_ACCESS_KEY'),
-      },
+    // Add container definition
+    const container = taskDefinition.addContainer('BotContainer', {
+      image: ecs.ContainerImage.fromRegistry('alpine:latest'), // Placeholder
       environment: {
-        WEBHOOKS_TABLE_NAME: 'Webhooks',
-        REGEX_TABLE_NAME: 'RegexPatterns',
-        SERVERS_TABLE_NAME: 'Servers'
+        TABLE_NAME: table.tableName,
       },
-      logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'bot' }),
+      secrets: {
+        TOKEN: ecs.Secret.fromSecretsManager(
+          secretsmanager.Secret.fromSecretNameV2(this, 'TOKEN', 'TOKEN')
+        ),
+        REGION: ecs.Secret.fromSecretsManager(
+          secretsmanager.Secret.fromSecretNameV2(this, 'REGION', 'REGION')
+        ),
+        ENDPOINT: ecs.Secret.fromSecretsManager(
+          secretsmanager.Secret.fromSecretNameV2(this, 'ENDPOINT', 'ENDPOINT')
+        ),
+        ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(
+          secretsmanager.Secret.fromSecretNameV2(this, 'ACCESS_KEY_ID', 'ACCESS_KEY_ID')
+        ),
+        SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(
+          secretsmanager.Secret.fromSecretNameV2(this, 'SECRET_ACCESS_KEY', 'SECRET_ACCESS_KEY')
+        ),
+      },
       healthCheck: {
-        command: ['CMD-SHELL', 'pgrep node || exit 1'],
-        interval: cdk.Duration.seconds(60),
-        timeout: cdk.Duration.seconds(10),
-        retries: 5,
-        startPeriod: cdk.Duration.seconds(120),
+        command: [
+          'CMD-SHELL',
+          'pgrep -f "node" || exit 1'
+        ],
+        interval: cdk.Duration.seconds(30),
+        retries: 3,
+        startPeriod: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(5)
       },
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: 'DiscordBot',
+        logRetention: logs.RetentionDays.ONE_WEEK
+      }),
     });
 
-    // Create a security group for the Fargate service
-    const serviceSecurityGroup = new ec2.SecurityGroup(this, 'BotServiceSecurityGroup', {
-      vpc,
-      description: 'Security group for discord bot service',
-      allowAllOutbound: true,
-    });
-
+    // 5. Create Fargate Service
     const service = new ecs.FargateService(this, 'BotService', {
       cluster,
       taskDefinition,
-      desiredCount: 1, // Single instance is enough for a bot
-      securityGroups: [serviceSecurityGroup],
-      assignPublicIp: true, // Temporarily set to true for troubleshooting
+      desiredCount: 1,
+      healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
     });
 
-    // CI/CD Pipeline
+    // 6. Grant permissions
+    table.grantReadWriteData(taskDefinition.taskRole);
+    // secretsmanager.Secret.fromSecretNameV2(this, 'DiscordTokenSecret', 'DISCORD_TOKEN')
+    //   .grantRead(taskDefinition.taskRole);
+
+    // 7. Create CodeStar Connection for GitHub
+    const sourceOutput = new codepipeline.Artifact('SourceArtifact');
+    const githubConnection = new codepipeline_actions.GitHubSourceAction({
+      actionName: 'GitHub_Source',
+      owner: 'Lifestyle-Trading',
+      repo: 'hft-discord-trading',
+      branch: 'main',
+      oauthToken: cdk.SecretValue.secretsManager('github-token'),
+      output: sourceOutput,
+      trigger: codepipeline_actions.GitHubTrigger.WEBHOOK,
+    });
+
+    // 8. Create Pipeline
     const pipeline = new codepipeline.Pipeline(this, 'BotPipeline', {
       pipelineName: 'DiscordBotPipeline',
     });
 
-    // GitHub Source configuration
-    const sourceOutput = new codepipeline.Artifact('SourceArtifact');
-
-    // Configure GitHub source action to trigger on pushes to main branch
-    const sourceAction = new codepipeline_actions.GitHubSourceAction({
-      actionName: 'GitHub_Source',
-      owner: 'Lifestyle-Trading',
-      repo: 'hft-discord-trading',
-      oauthToken: cdk.SecretValue.secretsManager('github-token'),
-      output: sourceOutput,
-      trigger: codepipeline_actions.GitHubTrigger.WEBHOOK,
-      branch: 'main', // Trigger on pushes to main branch
-    });
-
+    // Source Stage
     pipeline.addStage({
       stageName: 'Source',
-      actions: [sourceAction],
+      actions: [githubConnection],
     });
 
-    // Add a comment explaining the trigger mechanism
-    /*
-     * Pipeline trigger configuration:
-     * - The pipeline is triggered automatically when code is pushed to the main branch
-     * - The default GitHub webhook configuration handles this without additional setup
-     * - Each push to main will trigger a build and deployment
-     */
-
     // Build Stage
+    const buildOutput = new codepipeline.Artifact('DiscordBotCodeBuild');
     const buildProject = new codebuild.PipelineProject(this, 'BotBuildProject', {
       environment: {
-        buildImage: codebuild.LinuxBuildImage.STANDARD_7_0, // Updated to newer version
-        computeType: codebuild.ComputeType.SMALL,
-        privileged: true,
-      },
-      environmentVariables: {
-        ECR_REPO_URI: { value: repository.repositoryUri },
-        AWS_ACCOUNT_ID: { value: cdk.Aws.ACCOUNT_ID },
-        AWS_REGION: { value: cdk.Aws.REGION },
+        buildImage: codebuild.LinuxBuildImage.STANDARD_6_0,
+        privileged: true, // Required for Docker
+        environmentVariables: {
+          ECR_REPO_URI: { value: ecrRepo.repositoryUri },
+          AWS_ACCOUNT_ID: { value: cdk.Stack.of(this).account },
+        },
       },
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
         phases: {
           pre_build: {
             commands: [
-              'echo Logging in to Amazon ECR...',
-              'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com',
+              'echo "Logging in to ECR..."',
+              'aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI',
+              'cd apps/discord',
+              'npm ci',
             ],
           },
           build: {
             commands: [
-              'echo Building Docker image...',
+              'npx turbo build --filter=./apps/discord',
               'docker build -t $ECR_REPO_URI:latest .',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
           },
           post_build: {
             commands: [
-              'echo Pushing Docker images...',
               'docker push $ECR_REPO_URI:latest',
               'docker push $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-              'echo Writing image definitions...',
-              `printf '[{"name":"BotContainer","imageUri":"%s"}]' $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json`,
+              'printf "[{\\"name\\":\\"BotContainer\\",\\"imageUri\\":\\"%s\\"}]" $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json',
             ],
           },
         },
@@ -182,14 +153,20 @@ class DiscordBotStack extends cdk.Stack {
       }),
     });
 
-    repository.grantPullPush(buildProject);
+    // Grant build project permissions
+    ecrRepo.grantPullPush(buildProject);
+    buildProject.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [
+        `arn:aws:secretsmanager:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:secret:discord-bot-secrets*`,
+      ],
+    }));
 
-    const buildOutput = new codepipeline.Artifact('BuildArtifact');
     pipeline.addStage({
       stageName: 'Build',
       actions: [
         new codepipeline_actions.CodeBuildAction({
-          actionName: 'Build',
+          actionName: 'DockerBuild',
           project: buildProject,
           input: sourceOutput,
           outputs: [buildOutput],
@@ -202,25 +179,12 @@ class DiscordBotStack extends cdk.Stack {
       stageName: 'Deploy',
       actions: [
         new codepipeline_actions.EcsDeployAction({
-          actionName: 'Deploy',
+          actionName: 'FargateDeploy',
           service,
           input: buildOutput,
+          deploymentTimeout: cdk.Duration.minutes(15),
         }),
       ],
     });
-
-    // Add auto-scaling based on CPU utilization (optional for a bot, but added for consistency)
-    const scaling = service.autoScaleTaskCount({
-      minCapacity: 1,
-      maxCapacity: 2, // Lower max capacity since it's just a bot
-    });
-
-    scaling.scaleOnCpuUtilization('CpuScaling', {
-      targetUtilizationPercent: 80, // Higher threshold for bot
-      scaleInCooldown: cdk.Duration.seconds(60),
-      scaleOutCooldown: cdk.Duration.seconds(60),
-    });
   }
 }
-
-export { DiscordBotStack };
