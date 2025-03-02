@@ -1,47 +1,51 @@
 FROM node:18-alpine AS base
 
-# Install dependencies only when needed
-FROM base AS deps
-WORKDIR /app
+# Install pnpm and turbo
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install --global turbo@latest
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
-
-# Rebuild the source code only when needed
 FROM base AS builder
+RUN apk update
+RUN apk add --no-cache libc6-compat
+# Set working directory
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
 COPY . .
 
-# If using a monorepo setup, uncomment and adjust these lines
-# COPY ../../packages ./packages
-# COPY ../../package.json ./package.json
-# COPY ../../tsconfig.json ./tsconfig.json
+# Generate a partial monorepo with a pruned lockfile for discord
+RUN turbo prune @discord/bot --docker
 
-# Build the application
-RUN yarn build
+# Add lockfile and package.json's of isolated subworkspace
+FROM base AS installer
+RUN apk update
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
-# Production image, copy all the files and run node
+
+# First install the dependencies (as they change less often)
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
+
+# Install dependencies with pnpm which supports workspace: protocol
+RUN pnpm install --frozen-lockfile
+
+# Build the project
+COPY --from=builder /app/out/full/ .
+RUN pnpm turbo run build --filter=@discord/bot
+
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV production
 
+# Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 discordbot
 
-# Copy only the necessary files
-COPY --from=builder --chown=discordbot:nodejs /app/dist ./dist
-COPY --from=builder --chown=discordbot:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=discordbot:nodejs /app/package.json ./package.json
+# Copy built application
+COPY --from=installer --chown=discordbot:nodejs /app .
 
 USER discordbot
 
-# Command to run the application
-CMD ["node", "dist/index.js"]
+CMD ["node", "apps/discord/dist/index.js"]

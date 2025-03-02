@@ -13,60 +13,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-#     volumes:
-#       - dynamodb-data:/home/dynamodblocal/data
-#     networks:
-#       - discord-regex-network
 
-#   dashboard:
-#     build:
-#       context: .
-#       dockerfile: apps/dashboard/Dockerfile
-#     container_name: dashboard
-#     ports:
-#       - "3000:3000"
-#     environment:
-#       NODE_ENV: development
-#       AWS_REGION: us-west-2
-#       AWS_ACCESS_KEY_ID: dummy
-#       AWS_SECRET_ACCESS_KEY: dummy
-#       DYNAMODB_ENDPOINT: http://dynamodb:8000
-#       WEBHOOKS_TABLE_NAME: Webhooks
-#       REGEX_TABLE_NAME: RegexPatterns
-#       SERVERS_TABLE_NAME: Servers
-#       NEXT_PUBLIC_API_URL: http://localhost:3000/api
-#     depends_on:
-#       dynamodb:
-#         condition: service_healthy
-#     networks:
-#       - discord-regex-network
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    container_name: dashboard
+    ports:
+      - "3000:3000"
 
-#   discord-bot:
-#     build:
-#       context: .
-#       dockerfile: apps/discord/Dockerfile
-#     container_name: discord-bot
-#     environment:
-#       NODE_ENV: development
-#       AWS_REGION: us-west-2
-#       AWS_ACCESS_KEY_ID: dummy
-#       AWS_SECRET_ACCESS_KEY: dummy
-#       DYNAMODB_ENDPOINT: http://dynamodb:8000
-#       WEBHOOKS_TABLE_NAME: Webhooks
-#       REGEX_TABLE_NAME: RegexPatterns
-#       SERVERS_TABLE_NAME: Servers
-#       # You'll need to provide this via a .env file or environment variable
-#       DISCORD_TOKEN: ${DISCORD_TOKEN}
-#     depends_on:
-#       dynamodb:
-#         condition: service_healthy
-#     networks:
-#       - discord-regex-network
-
-# volumes:
-#   dynamodb-data:
-#     driver: local
-
-# networks:
-#   discord-regex-network:
-#     driver: bridge
+  discord:
+    build:
+      context: .
+      dockerfile: apps/discord/Dockerfile
+    container_name: discord
