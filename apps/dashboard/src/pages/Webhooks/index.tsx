@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } f
 interface Webhook {
   name: string;
   url: string;
-  createdAt: string;
+  serverId: string;
 }
 
 export default function Webhooks({ data }: { data: Webhook[] }) {
@@ -40,6 +40,11 @@ export default function Webhooks({ data }: { data: Webhook[] }) {
       cell: ({ row }) => <span>{row.original.name}</span>
     },
     {
+      accessorKey: "serverId",
+      header: "Server ID",
+      cell: ({ row }) => <span>{row.original.serverId}</span>
+    },
+    {
       accessorKey: "url",
       header: "URL",
       cell: ({ row }) => (
@@ -47,11 +52,6 @@ export default function Webhooks({ data }: { data: Webhook[] }) {
           {row.original.url}
         </a>
       )
-    },
-    {
-      accessorKey: "createdAt",
-      header: "Created At",
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleString()
     },
     {
       header: "Actions",

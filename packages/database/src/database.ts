@@ -51,8 +51,16 @@ class DynamoDatabase {
 
     const command = new CreateTableCommand({
       TableName: this.webhooksTableName,
-      AttributeDefinitions: [{ AttributeName: "name", AttributeType: "S" }],
-      KeySchema: [{ AttributeName: "name", KeyType: "HASH" }],
+      AttributeDefinitions: [
+        { AttributeName: "name", AttributeType: "S" },
+        { AttributeName: "serverId", AttributeType: "S" },
+        { AttributeName: "url", AttributeType: "S" },
+      ],
+      KeySchema: [
+        { AttributeName: "name", KeyType: "HASH" },
+        { AttributeName: "serverId", KeyType: "HASH" },
+        { AttributeName: "url", KeyType: "HASH" }
+      ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
         WriteCapacityUnits: 5,
@@ -95,8 +103,18 @@ class DynamoDatabase {
 
     const command = new CreateTableCommand({
       TableName: this.serversTableName,
-      AttributeDefinitions: [{ AttributeName: "serverId", AttributeType: "S" }],
-      KeySchema: [{ AttributeName: "serverId", KeyType: "HASH" }],
+      AttributeDefinitions: [
+        { AttributeName: "serverId", AttributeType: "S" },
+        { AttributeName: "email", AttributeType: "S" },
+        { AttributeName: "status", AttributeType: "S" },
+        { AttributeName: "totalUsers", AttributeType: "S" },
+      ],
+      KeySchema: [
+        { AttributeName: "serverId", KeyType: "HASH" },
+        { AttributeName: "email", KeyType: "HASH" },
+        { AttributeName: "status", KeyType: "RANGE" },
+        { AttributeName: "totalUsers", KeyType: "RANGE" },
+      ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
         WriteCapacityUnits: 5,
@@ -136,10 +154,10 @@ class DynamoDatabase {
   }
 
   // Webhooks Table Methods
-  async createWebhook(name: string, url: string): Promise<void> {
+  async createWebhook(name: string, url: string, serverId: string): Promise<void> {
     await this.db.send(new PutCommand({
       TableName: this.webhooksTableName,
-      Item: { name, url },
+      Item: { name, url, serverId },
     }));
   }
 

@@ -10,7 +10,7 @@ interface DiscordServer {
   name: string;
   status: "active" | "disabled";
   totalUsers: number;
-  totalChannels: number;
+  email: string;
 }
 
 export default function Server({ data }: { data: DiscordServer[] }) {
@@ -66,6 +66,8 @@ export default function Server({ data }: { data: DiscordServer[] }) {
   const columns: ColumnDef<DiscordServer, unknown>[] = [
     { accessorKey: "serverId", header: "Server ID" },
     { accessorKey: "name", header: "Server Name", cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
+    { accessorKey: "email", header: "Server Owner Email" },
+    { accessorKey: "totalUsers", header: "Users" },
     {
       accessorKey: "status",
       header: "Status",
@@ -75,8 +77,6 @@ export default function Server({ data }: { data: DiscordServer[] }) {
         </Badge>
       )
     },
-    { accessorKey: "totalChannels", header: "Channels" },
-    { accessorKey: "totalUsers", header: "Users" }
     // {
     //   header: "Actions",
     //   cell: ({ row }) => (

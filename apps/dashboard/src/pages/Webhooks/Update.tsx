@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 
 export default function UpdateWebhook({ id }: { id: string }) {
   const router = useRouter();
-  const [webhook, setWebhook] = useState<{ name: string; url: string } | null>(null);
+  const [webhook, setWebhook] = useState<{ name: string; url: string; serverId: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -59,14 +59,20 @@ export default function UpdateWebhook({ id }: { id: string }) {
     <div className="max-w-lg mx-auto mt-10 p-6 shadow rounded-lg border">
       <h1 className="text-primary text-2xl font-bold mb-4">Edit Webhook</h1>
       <form onSubmit={handleUpdate} className="space-y-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Name</Label>
           <Input value={webhook.name} onChange={e => setWebhook({ ...webhook, name: e.target.value })} required />
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>URL</Label>
           <Input type="url" value={webhook.url} onChange={e => setWebhook({ ...webhook, url: e.target.value })} required />
         </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Server ID</Label>
+          <Input type="text" value={webhook.serverId} onChange={e => setWebhook({ ...webhook, serverId: e.target.value })} required />
+        </div>
+
         <Button type="submit" disabled={loading}>
           {loading ? "Updating..." : "Update Webhook"}
         </Button>

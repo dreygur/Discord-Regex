@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 export default function CreateWebhook() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [serverId, setServerId] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -21,7 +22,7 @@ export default function CreateWebhook() {
       await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, url })
+        body: JSON.stringify({ name, url, serverId })
       });
 
       toast.success("Webhook created successfully", { id: "webhook" });
@@ -38,14 +39,19 @@ export default function CreateWebhook() {
     <div className="max-w-lg mx-auto mt-10 p-6 shadow rounded-lg border">
       <h1 className="text-primary text-2xl font-bold mb-4">Create Webhook</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Name</Label>
           <Input type="text" value={name} onChange={e => setName(e.target.value)} required />
         </div>
 
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>URL</Label>
           <Input type="url" value={url} onChange={e => setUrl(e.target.value)} required />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Server ID</Label>
+          <Input type="text" value={serverId} onChange={e => setServerId(e.target.value)} required />
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>

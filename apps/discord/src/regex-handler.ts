@@ -73,25 +73,4 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
         .catch(console.error)
     }
   });
-
-  /*
-  // Standard GET request with default retries and delay
-  queue.add('https://api.example.com/data')
-    .then(response => response.json())
-    .catch(error => console.error('Final error:', error));
-
-  // POST request with custom retries and delay
-  queue.add(
-    'https://api.example.com/other-data',
-    {
-      method: 'POST',
-      body: JSON.stringify({ key: 'value' }),
-      headers: { 'Content-Type': 'application/json' }
-    },
-    5,  // retries
-    2000 // delay
-  ).then(response => {
-    console.log('POST successful:', response.status);
-  });
-  */
 }

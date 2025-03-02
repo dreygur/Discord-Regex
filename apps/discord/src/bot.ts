@@ -31,7 +31,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isAutocomplete()) {
     // Do the autocompletion here
     // const focusValue = interaction.options.getFocused(true);
-    const choices: { name: string; url: string }[] = await database.getAllWebhooks();
+    const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
 
     await interaction.respond(
       choices.map(choice => ({ name: choice.name, value: choice.name }))

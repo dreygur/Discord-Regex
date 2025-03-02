@@ -14,13 +14,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { serverId, name, status, totalUsers, totalChannels } = await req.json();
+    const { serverId, name, status, totalUsers, email } = await req.json();
 
     if (!serverId || !name) {
       return NextResponse.json({ message: "Server ID and Name are required" }, { status: 400 });
     }
 
-    await database.createServer(serverId, name, status, totalUsers, totalChannels);
+    await database.createServer(serverId, name, status, totalUsers, email);
     return NextResponse.json({ message: "Server created successfully" }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: "Internal Server Error", error }, { status: 500 });
