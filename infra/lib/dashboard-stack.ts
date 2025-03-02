@@ -135,6 +135,7 @@ class DashboardStack extends cdk.Stack {
     // Register the service as the target for the load balancer
     listener.addTargets('DashboardTarget', {
       port: containerPort,
+      protocol: cdk.aws_elasticloadbalancingv2.ApplicationProtocol.HTTP,
       targets: [service],
       healthCheck: {
         path: '/',
