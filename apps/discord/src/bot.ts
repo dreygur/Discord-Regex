@@ -30,11 +30,11 @@ client.on(Events.GuildCreate, async (guild: Guild) => {
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isAutocomplete()) {
     // Do the autocompletion here
-    const focusValue = interaction.options.getFocused(true);
-    const choices = ['Popular Topics: Threads', 'Sharding: Getting started', 'Library: Voice Connections', 'Interactions: Replying to slash commands', 'Popular Topics: Embed preview'];
+    // const focusValue = interaction.options.getFocused(true);
+    const choices: { name: string; url: string }[] = await database.getAllWebhooks();
 
     await interaction.respond(
-      choices.map(choice => ({ name: choice, value: choice }))
+      choices.map(choice => ({ name: choice.name, value: choice.name }))
     );
 
   }
