@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { Toaster } from "react-hot-toast";
 import Navbar from "@/components/shared/Navbar";
 
 const geistSans = Geist({
@@ -31,6 +32,24 @@ export default async function RootLayout({
           <Navbar />
           {children}
         </AuthProvider>
+        <Toaster
+          toastOptions={{
+            success: {
+              style: {
+                background: "#282b30",
+                border: "1px solid #424549",
+                color: "#7289da"
+              }
+            },
+            error: {
+              style: {
+                background: "#282b30",
+                border: "1px solid #e7000b",
+                color: "#e7000b"
+              }
+            }
+          }}
+        />
       </body>
     </html>
   );

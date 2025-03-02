@@ -8,7 +8,7 @@ import { Button } from "../ui/button";
 import Link from "next/link";
 
 interface DataTableProps<TData> {
-  columns: ColumnDef<TData, any>[]; // Ensure flexibility for column types
+  columns: ColumnDef<TData, unknown>[]; // Ensure flexibility for column types
   data: TData[]; // Type-safe data prop
   addRoute?: string;
 }
@@ -20,6 +20,7 @@ export function DataTable<TData>({ columns, data, addRoute }: DataTableProps<TDa
     if (globalFilter.length < 3) return data;
 
     const lowerCaseFilter = globalFilter.toLowerCase();
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return data.filter(item => Object.values(item).some(value => typeof value === "string" && value.toLowerCase().includes(lowerCaseFilter)));
   }, [globalFilter, data]);

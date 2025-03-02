@@ -1,0 +1,57 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import toast from "react-hot-toast";
+
+export default function CreateWebhook() {
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setLoading(true);
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, url })
+      });
+
+      toast.success("Webhook created successfully", { id: "webhook" });
+      router.push("/webhooks");
+    } catch (error) {
+      toast.error("Failed to create webhook", { id: "webhook" });
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg mx-auto mt-10 p-6 shadow rounded-lg border">
+      <h1 className="text-primary text-2xl font-bold mb-4">Create Webhook</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Label>Name</Label>
+          <Input type="text" value={name} onChange={e => setName(e.target.value)} required />
+        </div>
+
+        <div>
+          <Label>URL</Label>
+          <Input type="url" value={url} onChange={e => setUrl(e.target.value)} required />
+        </div>
+
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Creating..." : "Create Webhook"}
+        </Button>
+      </form>
+    </div>
+  );
+}
