@@ -353,7 +353,7 @@ class DynamoDatabase {
       name?: string;
       status?: "active" | "disabled";
       totalUsers?: number;
-      totalChannels?: number;
+      email?: string;
     }
   ): Promise<void> {
     const updateExpressions: string[] = [];

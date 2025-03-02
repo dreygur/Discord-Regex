@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { database } from "@/lib/database";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,16 +15,22 @@ export default function UpdateServer({ id }: { id: string }) {
     name: string;
     status: "active" | "disabled";
     totalUsers: number;
-    totalChannels: number;
+    email: string;
   } | null>(null);
 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchServer = async () => {
-      if (!id) return;
-      const data = await database.getServer(id as string);
-      if (data) setServer(data);
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/server/${id}`);
+        if (!res.ok) throw new Error("Failed to fetch webhook");
+        const data = await res.json();
+        setServer(data);
+      } catch (error) {
+        toast.error("Error fetching server data", { id: "server" });
+        console.error(error);
+      }
     };
 
     fetchServer();
@@ -37,14 +42,18 @@ export default function UpdateServer({ id }: { id: string }) {
 
     setLoading(true);
     try {
-      await database.updateServer(server.serverId, {
-        name: server.name,
-        status: server.status,
-        totalUsers: server.totalUsers,
-        totalChannels: server.totalChannels
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/server/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: server.name,
+          status: server.status,
+          totalUsers: server.totalUsers,
+          email: server.email
+        })
       });
       toast.success("Server updated successfully");
-      router.push("/servers");
+      router.push("/");
     } catch (error) {
       toast.error("Error updating server");
       console.error(error);
@@ -59,15 +68,19 @@ export default function UpdateServer({ id }: { id: string }) {
     <div className="p-6 max-w-lg mx-auto">
       <h1 className="text-primary text-2xl font-bold mb-4">Edit Server</h1>
       <form onSubmit={handleUpdate} className="space-y-4">
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Server ID</Label>
           <Input value={server.serverId} disabled />
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Server Name</Label>
-          <Input value={server.name} onChange={e => setServer({ ...server, name: e.target.value })} required />
+          <Input value={server.name} onChange={e => setServer({ ...server, name: e.target.value })} disabled />
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
+          <Label>Server Owner Email</Label>
+          <Input type="text" value={server.email || ''} onChange={e => setServer({ ...server, email: e.target.value })} />
+        </div>
+        <div className="flex flex-col gap-2">
           <Label>Status</Label>
           <Select value={server.status} onValueChange={(val: string) => setServer({ ...server, status: val as "active" | "disabled" })}>
             <SelectTrigger>
@@ -79,13 +92,9 @@ export default function UpdateServer({ id }: { id: string }) {
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Total Users</Label>
-          <Input type="number" value={server.totalUsers} onChange={e => setServer({ ...server, totalUsers: Number(e.target.value) })} />
-        </div>
-        <div>
-          <Label>Total Channels</Label>
-          <Input type="number" value={server.totalChannels} onChange={e => setServer({ ...server, totalChannels: Number(e.target.value) })} />
+          <Input type="number" value={server.totalUsers} onChange={e => setServer({ ...server, totalUsers: Number(e.target.value) })} disabled />
         </div>
         <Button type="submit" disabled={loading}>
           {loading ? "Updating..." : "Update Server"}

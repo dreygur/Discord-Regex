@@ -1,5 +1,7 @@
 import { DynamoDatabase } from "@discord/database";
 
+let created: boolean = false;
+
 const database = new DynamoDatabase({
   region: process.env.NEXT_REGION as string,
   endpoint: process.env.NEXT_ENDPOINT as string,
@@ -14,8 +16,11 @@ const database = new DynamoDatabase({
 
 (async () => {
   try {
-    await database.createTables();
-    console.log("All tables created successfully");
+    if (!created) {
+      await database.createTables();
+      created = true;
+      console.log("All tables created successfully");
+    }
   } catch (error) {
     console.error("Error creating tables:", error);
   }

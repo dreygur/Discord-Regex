@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared/DataTable";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 
 interface DiscordServer {
   serverId: string;
@@ -14,6 +17,7 @@ interface DiscordServer {
 }
 
 export default function Server({ data }: { data: DiscordServer[] }) {
+  const router = useRouter();
   const [servers, setServers] = useState<DiscordServer[]>(data || []);
 
   // Toggle Status Handler
@@ -41,9 +45,9 @@ export default function Server({ data }: { data: DiscordServer[] }) {
     }
   };
 
-  // const handleEdit = (id: string) => {
-  //   router.push(`/server/update/${id}`);
-  // };
+  const handleEdit = (id: string) => {
+    router.push(`/server/update/${id}`);
+  };
 
   // const handleDelete = async () => {
   //   if (selectedServerId) {
@@ -77,19 +81,19 @@ export default function Server({ data }: { data: DiscordServer[] }) {
         </Badge>
       )
     },
-    // {
-    //   header: "Actions",
-    //   cell: ({ row }) => (
-    //     <div className="flex gap-2">
-    //       <Button variant="outline" size="icon" onClick={() => handleEdit(row.original.id)}>
-    //         <Pencil className="h-4 w-4" />
-    //       </Button>
-    //       <Button variant="destructive" size="icon" onClick={() => openDeleteModal(row.original.id)}>
-    //         <Trash className="h-4 w-4" />
-    //       </Button>
-    //     </div>
-    //   )
-    // }
+    {
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={() => handleEdit(row.original.serverId)} >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          {/* <Button variant="destructive" size="icon" onClick={() => openDeleteModal(row.original.id)}>
+            <Trash className="h-4 w-4" />
+          </Button> */}
+        </div>
+      )
+    }
   ];
 
   return (
