@@ -7,6 +7,7 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as asc from 'aws-cdk-lib/aws-autoscaling';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
@@ -32,12 +33,27 @@ export class DiscordBotStack extends cdk.Stack {
     const vpc = new ec2.Vpc(this, 'BotVpc', { maxAzs: 2 });
     const cluster = new ecs.Cluster(this, 'BotCluster', { vpc });
 
+    // Create an Auto Scaling Group for ECS instances
+    cluster.addCapacity('BotAutoScalingGroup', {
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
+      machineImage: ec2.MachineImage.genericLinux({
+        'us-east-1': ecs.EcsOptimizedImage.amazonLinux2().getImage(this).imageId,
+      }), // ECS-Optimized AMI
+      minCapacity: 1,
+      maxCapacity: 3,
+    });
+
+    // Attach ASG to ECS Cluster
+
     // 4. Create Task Definition with placeholder image
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
+    // const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
+    const taskDefinition = new ecs.Ec2TaskDefinition(this, 'BotTaskDef');
 
     // Add container definition
     const container = taskDefinition.addContainer('BotContainer', {
       image: ecs.ContainerImage.fromRegistry('alpine:latest'), // Placeholder
+      memoryLimitMiB: 1024,
+      cpu: 256,
       environment: {
         TABLE_NAME: table.tableName,
       },
@@ -161,26 +177,32 @@ export class DiscordBotStack extends cdk.Stack {
     // 6. Grant permissions
     table.grantReadWriteData(taskDefinition.taskRole);
 
+    const service = new ecs.Ec2Service(this, 'BotService', {
+      cluster,
+      taskDefinition,
+      desiredCount: 1,
+    });
+
     // 5. Create Fargate Service
     // const service = new ecs.FargateService(this, 'BotService', {
     //   cluster,
     //   taskDefinition,
     //   desiredCount: 1,
+    //   minHealthyPercent: 0,
     //   healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
     // });
 
-
-    // // Deploy Stage
-    // pipeline.addStage({
-    //   stageName: 'Deploy',
-    //   actions: [
-    //     new codepipeline_actions.EcsDeployAction({
-    //       actionName: 'FargateDeploy',
-    //       service,
-    //       input: buildOutput,
-    //       deploymentTimeout: cdk.Duration.minutes(15),
-    //     }),
-    //   ],
-    // });
+    // Deploy Stage
+    pipeline.addStage({
+      stageName: 'Deploy',
+      actions: [
+        new codepipeline_actions.EcsDeployAction({
+          actionName: 'Ec2Deploy',
+          service,
+          input: buildOutput,
+          deploymentTimeout: cdk.Duration.minutes(5),
+        }),
+      ],
+    });
   }
 }

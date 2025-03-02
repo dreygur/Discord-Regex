@@ -167,6 +167,7 @@ export class DashboardStack extends cdk.Stack {
     //   cluster,
     //   taskDefinition,
     //   desiredCount: 1,
+    //   minHealthyPercent: 0,
     //   healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
     // });
 
@@ -178,7 +179,7 @@ export class DashboardStack extends cdk.Stack {
     //       actionName: 'FargateDeploy',
     //       service,
     //       input: buildOutput,
-    //       deploymentTimeout: cdk.Duration.minutes(15),
+    //       deploymentTimeout: cdk.Duration.minutes(5),
     //     }),
     //   ],
     // });
