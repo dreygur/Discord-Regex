@@ -74,19 +74,6 @@ export class DashboardStack extends cdk.Stack {
       }),
     });
 
-    // 5. Create Fargate Service
-    const service = new ecs.FargateService(this, 'DashboardService', {
-      cluster,
-      taskDefinition,
-      desiredCount: 1,
-      healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
-    });
-
-    // 6. Grant permissions
-    table.grantReadWriteData(taskDefinition.taskRole);
-    // secretsmanager.Secret.fromSecretNameV2(this, 'DiscordTokenSecret', 'DISCORD_TOKEN')
-    //   .grantRead(taskDefinition.taskRole);
-
     // 7. Create CodeStar Connection for GitHub
     const sourceOutput = new codepipeline.Artifact('SourceArtifact');
     const githubConnection = new codepipeline_actions.GitHubSourceAction({
@@ -128,14 +115,11 @@ export class DashboardStack extends cdk.Stack {
             commands: [
               'echo "Logging in to ECR..."',
               'aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI',
-              'cd apps/dashboard',
-              'npm ci',
             ],
           },
           build: {
             commands: [
-              'npx turbo build --filter=./apps/dashboard',
-              'docker build -t $ECR_REPO_URI:latest .',
+              'docker build -t $ECR_REPO_URI:latest -f apps/dashboard/Dockerfile .',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
           },
@@ -174,17 +158,29 @@ export class DashboardStack extends cdk.Stack {
       ],
     });
 
-    // Deploy Stage
-    pipeline.addStage({
-      stageName: 'Deploy',
-      actions: [
-        new codepipeline_actions.EcsDeployAction({
-          actionName: 'FargateDeploy',
-          service,
-          input: buildOutput,
-          deploymentTimeout: cdk.Duration.minutes(15),
-        }),
-      ],
-    });
+
+    // 6. Grant permissions
+    table.grantReadWriteData(taskDefinition.taskRole);
+
+    // 5. Create Fargate Service
+    // const service = new ecs.FargateService(this, 'DashboardService', {
+    //   cluster,
+    //   taskDefinition,
+    //   desiredCount: 1,
+    //   healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
+    // });
+
+    // // Deploy Stage
+    // pipeline.addStage({
+    //   stageName: 'Deploy',
+    //   actions: [
+    //     new codepipeline_actions.EcsDeployAction({
+    //       actionName: 'FargateDeploy',
+    //       service,
+    //       input: buildOutput,
+    //       deploymentTimeout: cdk.Duration.minutes(15),
+    //     }),
+    //   ],
+    // });
   }
 }

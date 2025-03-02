@@ -6,7 +6,7 @@ import { DashboardStack } from '../lib/dashboard-stack';
 
 const app = new cdk.App();
 new DiscordBotStack(app, 'DiscordBotStack');
-new DashboardStack(app, 'DashboardStack');
+// new DashboardStack(app, 'DashboardStack');
 // new DynamoDBStack(app, 'DynamoDBStack');
 
 // app.synth();
