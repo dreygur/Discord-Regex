@@ -7,9 +7,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
-import * as targets from 'aws-cdk-lib/aws-events-targets';
-import * as events from 'aws-cdk-lib/aws-events';
-import * as codestarconnections from 'aws-cdk-lib/aws-codestarconnections';
 
 class DashboardStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {

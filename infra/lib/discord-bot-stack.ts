@@ -7,8 +7,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
-import * as events from 'aws-cdk-lib/aws-events';
-import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 class DiscordBotStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -72,7 +70,11 @@ class DiscordBotStack extends cdk.Stack {
     taskDefinition.addContainer('BotContainer', {
       image: ecs.ContainerImage.fromEcrRepository(repository, 'latest'),
       secrets: {
-        DISCORD_TOKEN: ecs.Secret.fromSecretsManager(secret, 'DISCORD_TOKEN'),
+        TOKEN: ecs.Secret.fromSecretsManager(secret, 'TOKEN'),
+        REGION: ecs.Secret.fromSecretsManager(secret, 'REGION'),
+        ENDPOINT: ecs.Secret.fromSecretsManager(secret, 'ENDPOINT'),
+        ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(secret, 'ACCESS_KEY_ID'),
+        SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(secret, 'SECRET_ACCESS_KEY'),
       },
       environment: {
         WEBHOOKS_TABLE_NAME: 'Webhooks',
@@ -82,10 +84,10 @@ class DiscordBotStack extends cdk.Stack {
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'bot' }),
       healthCheck: {
         command: ['CMD-SHELL', 'pgrep node || exit 1'],
-        interval: cdk.Duration.seconds(30),
-        timeout: cdk.Duration.seconds(5),
-        retries: 3,
-        startPeriod: cdk.Duration.seconds(60),
+        interval: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(10),
+        retries: 5,
+        startPeriod: cdk.Duration.seconds(120),
       },
     });
 
@@ -101,7 +103,7 @@ class DiscordBotStack extends cdk.Stack {
       taskDefinition,
       desiredCount: 1, // Single instance is enough for a bot
       securityGroups: [serviceSecurityGroup],
-      assignPublicIp: false, // Use private IPs for security
+      assignPublicIp: true, // Temporarily set to true for troubleshooting
     });
 
     // CI/CD Pipeline
@@ -115,8 +117,8 @@ class DiscordBotStack extends cdk.Stack {
     // Configure GitHub source action to trigger on pushes to main branch
     const sourceAction = new codepipeline_actions.GitHubSourceAction({
       actionName: 'GitHub_Source',
-      owner: 'your-github-org',
-      repo: 'your-repo',
+      owner: 'Lifestyle-Trading',
+      repo: 'hft-discord-trading',
       oauthToken: cdk.SecretValue.secretsManager('github-token'),
       output: sourceOutput,
       trigger: codepipeline_actions.GitHubTrigger.WEBHOOK,
