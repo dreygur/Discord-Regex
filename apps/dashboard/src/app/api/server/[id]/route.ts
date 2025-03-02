@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { updates } = await req.json();
 
     if (!id || !updates) return NextResponse.json({ message: "Server ID and updates are required" }, { status: 400 });
@@ -15,9 +18,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ message: "Server ID is required" }, { status: 400 });

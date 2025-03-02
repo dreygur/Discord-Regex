@@ -4,7 +4,9 @@ import { ReactNode, createContext, useState, useEffect, useContext } from "react
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setUser: React.Dispatch<React.SetStateAction<any>>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;

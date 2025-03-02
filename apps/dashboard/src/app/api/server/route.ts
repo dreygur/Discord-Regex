@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const server = await database.getAllServers();
     if (!server) return NextResponse.json({ message: "Server not found" }, { status: 404 });

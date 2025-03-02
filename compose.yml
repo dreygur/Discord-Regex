@@ -21,9 +21,13 @@ services:
     container_name: dashboard
     ports:
       - "3000:3000"
+    depends_on:
+      - dynamodb
 
   discord:
     build:
       context: .
       dockerfile: apps/discord/Dockerfile
     container_name: discord
+    depends_on:
+      - dynamodb
