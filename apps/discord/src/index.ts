@@ -1,8 +1,12 @@
+import { config as envConfig } from "dotenv";
+envConfig();
+
 import { Client, Events } from "discord.js";
 import { client } from "./bot";
 import { registerCommands } from "./commands";
 import { config } from "./config";
 import { database } from "./database";
+
 
 async function initializeDatabase() {
   try {

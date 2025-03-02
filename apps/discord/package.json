@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@discord/database": "workspace:*",
-    "discord.js": "^14.18.0"
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7"
   }
 }

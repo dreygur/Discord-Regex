@@ -4,6 +4,20 @@ FROM node:18-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN npm install --global turbo@latest
 
+ARG TOKEN
+ARG THUMBNAIL
+ARG REGION
+ARG ENDPOINT
+ARG ACCESS_KEY_ID
+ARG SECRET_ACCESS_KEY
+
+ENV TOKEN=${TOKEN}
+ENV THUMBNAIL=${THUMBNAIL}
+ENV REGION=${REGION}
+ENV ENDPOINT=${ENDPOINT}
+ENV ACCESS_KEY_ID=${ACCESS_KEY_ID}
+ENV SECRET_ACCESS_KEY=${SECRET_ACCESS_KEY}
+
 FROM base AS builder
 RUN apk update
 RUN apk add --no-cache libc6-compat

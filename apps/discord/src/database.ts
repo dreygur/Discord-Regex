@@ -1,11 +1,11 @@
 import { DynamoDatabase } from '@discord/database';
 
 const database = new DynamoDatabase({
-  region: 'us-west-2',
-  endpoint: 'http://localhost:8000',
+  region: process.env.REGION as string,
+  endpoint: process.env.ENDPOINT as string,
   credentials: {
-    accessKeyId: 'jmj0pe',
-    secretAccessKey: 'jkq4o6',
+    accessKeyId: process.env.ACCESS_KEY_ID as string,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY as string,
   },
   webhooksTableName: "Webhooks",
   regexTableName: "RegexPatterns",

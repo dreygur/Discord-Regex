@@ -1,18 +1,19 @@
 services:
-  dynamodb:
-    image: amazon/dynamodb-local
-    container_name: dynamodb
-    ports:
-      - "8000:8000"
-    environment:
-      AWS_REGION: us-west-2
-      AWS_ACCESS_KEY_ID: dummy
-      AWS_SECRET_ACCESS_KEY: dummy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # dynamodb:
+  #   image: amazon/dynamodb-local
+  #   container_name: dynamodb
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     AWS_REGION: us-west-2
+  #     AWS_ACCESS_KEY_ID: dummy
+  #     AWS_SECRET_ACCESS_KEY: dummy
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
 
   dashboard:
     build:
@@ -21,13 +22,32 @@ services:
     container_name: dashboard
     ports:
       - "3000:3000"
-    depends_on:
-      - dynamodb
+    environment:
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      NEXT_REGION: 'us-west-2'
+      NEXT_ENDPOINT: http://localhost:8000
+      NEXT_ACCESS_KEY_ID: jmj0pe
+      NEXT_SECRET_ACCESS_KEY: jkq4o6
+    networks:
+      - discord-network
 
   discord:
     build:
       context: .
       dockerfile: apps/discord/Dockerfile
     container_name: discord
-    depends_on:
-      - dynamodb
+    environment:
+      TOKEN: OTU0NTEzOTg2NjI2Mzg3OTY5.G8Jg0d.IXIaAYKiYHNWXazkicS4d6XdpHpjj9zRJaom5E
+      THUMBNAIL: https://i.imgur.com/AfFp7pu.png
+      REGION: 'us-west-2'
+      ENDPOINT: http://localhost:8000
+      ACCESS_KEY_ID: jmj0pe
+      SECRET_ACCESS_KEY: jkq4o6
+    networks:
+      - discord-network
+
+networks:
+  discord-network:
+    driver: bridge
+
+
