@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DiscordServer {
   serverId: string;
@@ -16,11 +13,8 @@ interface DiscordServer {
   totalChannels: number;
 }
 
-export default function ServerPage({ data }: { data: DiscordServer[] }) {
+export default function Server({ data }: { data: DiscordServer[] }) {
   const [servers, setServers] = useState<DiscordServer[]>(data || []);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
-  const router = useRouter();
 
   // Toggle Status Handler
   const handleToggleStatus = async (serverId: string, currentStatus: "active" | "disabled") => {
@@ -64,12 +58,12 @@ export default function ServerPage({ data }: { data: DiscordServer[] }) {
   //   }
   // };
 
-  const openDeleteModal = (id: string) => {
-    setSelectedServerId(id);
-    setDeleteModalOpen(true);
-  };
+  // const openDeleteModal = (id: string) => {
+  //   setSelectedServerId(id);
+  //   setDeleteModalOpen(true);
+  // };
 
-  const columns: ColumnDef<DiscordServer, any>[] = [
+  const columns: ColumnDef<DiscordServer, unknown>[] = [
     { accessorKey: "serverId", header: "Server ID" },
     { accessorKey: "name", header: "Server Name", cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
     {
@@ -100,7 +94,7 @@ export default function ServerPage({ data }: { data: DiscordServer[] }) {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Discord Servers</h1>
+      <h1 className="text-primary text-2xl font-bold mb-4 text-primary">Discord Servers</h1>
       <DataTable<DiscordServer> columns={columns} data={servers} />
       {/* <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>

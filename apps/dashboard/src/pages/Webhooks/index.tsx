@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ interface Webhook {
   createdAt: string;
 }
 
-export default function WebhooksPage({ data }: { data: Webhook[] }) {
+export default function Webhooks({ data }: { data: Webhook[] }) {
   const [webhooks, setWebhooks] = useState<Webhook[]>(data || []);
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -33,7 +33,7 @@ export default function WebhooksPage({ data }: { data: Webhook[] }) {
     }
   };
 
-  const columns: ColumnDef<Webhook, any>[] = [
+  const columns: ColumnDef<Webhook, unknown>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -76,7 +76,7 @@ export default function WebhooksPage({ data }: { data: Webhook[] }) {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Webhooks</h1>
+      <h1 className="text-primary text-2xl font-bold mb-4">Webhooks</h1>
       <DataTable<Webhook> columns={columns} data={webhooks} addRoute="/webhooks/create" />
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>

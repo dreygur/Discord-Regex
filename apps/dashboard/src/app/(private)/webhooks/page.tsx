@@ -1,4 +1,4 @@
-import WebhooksPage from "@/pages/Webhooks";
+import Webhooks from "@/pages/Webhooks";
 import React from "react";
 
 export default async function page() {
@@ -6,5 +6,5 @@ export default async function page() {
     cache: "no-store"
   });
   const data = await response.json();
-  return <WebhooksPage data={data} />;
+  return <Webhooks data={data} />;
 }
