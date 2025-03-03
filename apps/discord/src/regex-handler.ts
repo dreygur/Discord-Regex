@@ -19,7 +19,6 @@ interface IServer {
   name: string;
   status: "active" | "disabled";
   totalUsers: number;
-  totalChannels: number;
 }
 
 // The fetch Queue

@@ -13,7 +13,6 @@ export default function CreateServer() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"active" | "disabled">("active");
   const [totalUsers, setTotalUsers] = useState(0);
-  const [totalChannels, setTotalChannels] = useState(0);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -25,7 +24,7 @@ export default function CreateServer() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/server`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serverId, name, status, totalUsers, totalChannels })
+        body: JSON.stringify({ serverId, name, status, totalUsers })
       });
       if (response.ok) {
         toast.success("Server Created Successfully");
@@ -66,10 +65,6 @@ export default function CreateServer() {
         <div>
           <Label>Total Users</Label>
           <Input type="number" value={totalUsers} onChange={e => setTotalUsers(Number(e.target.value))} />
-        </div>
-        <div>
-          <Label>Total Channels</Label>
-          <Input type="number" value={totalChannels} onChange={e => setTotalChannels(Number(e.target.value))} />
         </div>
         <Button type="submit" disabled={loading}>
           {loading ? "Creating..." : "Create Server"}

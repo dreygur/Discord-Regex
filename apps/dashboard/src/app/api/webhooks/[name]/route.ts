@@ -20,12 +20,12 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ name: string }> }) {
   try {
-    const { url } = await req.json();
-    if (!url) {
-      return NextResponse.json({ message: "Missing required field: url" }, { status: 400 });
+    const { url, serverId, name } = await req.json();
+    if (!url || !serverId) {
+      return NextResponse.json({ message: "Missing required fields: url and serverId" }, { status: 400 });
     }
 
-    await database.updateWebhook((await params).name, url);
+    await database.updateWebhook((await params).name, name, url, serverId);
     return NextResponse.json({ message: "Webhook updated successfully" });
   } catch (error) {
     console.error("Error updating webhook:", error);

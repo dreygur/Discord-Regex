@@ -41,23 +41,6 @@ export class DiscordBotStack extends cdk.Stack {
       environment: {
         TABLE_NAME: table.tableName,
       },
-      secrets: {
-        TOKEN: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'TOKEN', 'TOKEN')
-        ),
-        REGION: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'REGION', 'REGION')
-        ),
-        ENDPOINT: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'ENDPOINT', 'ENDPOINT')
-        ),
-        ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'ACCESS_KEY_ID', 'ACCESS_KEY_ID')
-        ),
-        SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'SECRET_ACCESS_KEY', 'SECRET_ACCESS_KEY')
-        ),
-      },
       healthCheck: {
         command: [
           'CMD-SHELL',
@@ -119,6 +102,12 @@ export class DiscordBotStack extends cdk.Stack {
           },
           build: {
             commands: [
+              'APP_ENV_CONTENT=$(aws ssm get-parameter --name "bot" --with-decryption --query "Parameter.Value" --output text)',
+              'echo "APP_ENV_CONTENT: $APP_ENV_CONTENT"',
+
+              "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
+              'echo "env: $BUILD_ARGS"',
+
               'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile .',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
@@ -162,25 +151,25 @@ export class DiscordBotStack extends cdk.Stack {
     table.grantReadWriteData(taskDefinition.taskRole);
 
     // 5. Create Fargate Service
-    // const service = new ecs.FargateService(this, 'BotService', {
-    //   cluster,
-    //   taskDefinition,
-    //   desiredCount: 1,
-    //   healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
-    // });
+    const service = new ecs.FargateService(this, 'BotService', {
+      cluster,
+      taskDefinition,
+      desiredCount: 1,
+      healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
+    });
 
 
-    // // Deploy Stage
-    // pipeline.addStage({
-    //   stageName: 'Deploy',
-    //   actions: [
-    //     new codepipeline_actions.EcsDeployAction({
-    //       actionName: 'FargateDeploy',
-    //       service,
-    //       input: buildOutput,
-    //       deploymentTimeout: cdk.Duration.minutes(15),
-    //     }),
-    //   ],
-    // });
+    // Deploy Stage
+    pipeline.addStage({
+      stageName: 'Deploy',
+      actions: [
+        new codepipeline_actions.EcsDeployAction({
+          actionName: 'FargateDeploy',
+          service,
+          input: buildOutput,
+          deploymentTimeout: cdk.Duration.minutes(15),
+        }),
+      ],
+    });
   }
 }

@@ -62,25 +62,10 @@ class DynamoDatabase {
     const command = new CreateTableCommand({
       TableName: this.webhooksTableName,
       KeySchema: [
-        { AttributeName: "serverId", KeyType: "HASH" },
-        { AttributeName: "name", KeyType: "RANGE" },
-      ],
-      LocalSecondaryIndexes: [
-        {
-          IndexName: "name-index",
-          KeySchema: [
-            { AttributeName: "serverId", KeyType: "HASH" },
-            { AttributeName: "url", KeyType: "RANGE" }
-          ],
-          Projection: {
-            ProjectionType: "ALL"
-          }
-        }
+        { AttributeName: "name", KeyType: "HASH" },
       ],
       AttributeDefinitions: [
-        { AttributeName: "serverId", AttributeType: "S" },
         { AttributeName: "name", AttributeType: "S" },
-        { AttributeName: "url", AttributeType: "S" },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -101,11 +86,9 @@ class DynamoDatabase {
       TableName: this.regexTableName,
       AttributeDefinitions: [
         { AttributeName: "serverId", AttributeType: "S" },
-        { AttributeName: "regexPattern", AttributeType: "S" },
       ],
       KeySchema: [
         { AttributeName: "serverId", KeyType: "HASH" },
-        { AttributeName: "regexPattern", KeyType: "RANGE" },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -126,11 +109,9 @@ class DynamoDatabase {
       TableName: this.serversTableName,
       KeySchema: [
         { AttributeName: "serverId", KeyType: "HASH" },
-        { AttributeName: "email", KeyType: "RANGE" },
       ],
       AttributeDefinitions: [
         { AttributeName: "serverId", AttributeType: "S" },
-        { AttributeName: "email", AttributeType: "S" },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -178,22 +159,22 @@ class DynamoDatabase {
     }));
   }
 
-  async getWebhook(name: string): Promise<{ name: string; url: string } | null> {
+  async getWebhook(name: string): Promise<{ name: string, url: string, serverId: string } | null> {
     const result = await this.db.send(new GetCommand({
       TableName: this.webhooksTableName,
       Key: { name },
     }));
-    return result.Item as { name: string; url: string } || null;
+    return result.Item as { name: string, url: string, serverId: string } || null;
   }
 
   // Add to your DynamoDatabase class
-  async getAllWebhooks(): Promise<{ name: string; url: string }[]> {
+  async getAllWebhooks(): Promise<{ name: string, url: string, serverId: string }[]> {
     try {
       const result = await this.db.send(new ScanCommand({
         TableName: this.webhooksTableName,
       }));
 
-      return result.Items as { name: string; url: string }[] || [];
+      return result.Items as { name: string, url: string, serverId: string }[] || [];
     } catch (error) {
       console.error("Error fetching webhooks:", error);
       throw error;
@@ -201,8 +182,8 @@ class DynamoDatabase {
   }
 
   // If you need pagination for large datasets, use this version:
-  async getAllWebhooksPaginated(): Promise<{ name: string; url: string }[]> {
-    const items: { name: string; url: string }[] = [];
+  async getAllWebhooksPaginated(): Promise<{ name: string, url: string, serverId: string }[]> {
+    const items: { name: string, url: string, serverId: string }[] = [];
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
 
     do {
@@ -212,7 +193,7 @@ class DynamoDatabase {
       }));
 
       if (result.Items) {
-        items.push(...result.Items as { name: string; url: string }[]);
+        items.push(...result.Items as { name: string, url: string, serverId: string }[]);
       }
 
       lastEvaluatedKey = result.LastEvaluatedKey;
@@ -221,7 +202,7 @@ class DynamoDatabase {
     return items;
   }
 
-  async getAllWebhooksByServerId(serverId: string): Promise<{ name: string; url: string }[]> {
+  async getAllWebhooksByServerId(serverId: string): Promise<{ name: string, url: string, serverId: string }[]> {
     try {
       // First get all regex patterns with their webhook references
       const regexPatterns = await this.db.send(new QueryCommand({
@@ -248,20 +229,20 @@ class DynamoDatabase {
         }
       }));
 
-      return webhooksResponse.Responses?.[this.webhooksTableName] as { name: string; url: string }[] || [];
+      return webhooksResponse.Responses?.[this.webhooksTableName] as { name: string, url: string, serverId: string }[] || [];
     } catch (error) {
       console.error(`Error fetching webhooks for server ${serverId}:`, error);
       throw error;
     }
   }
 
-  async updateWebhook(name: string, newUrl: string): Promise<void> {
+  async updateWebhook(name: string, url: string, serverId: string): Promise<void> {
     await this.db.send(new UpdateCommand({
       TableName: this.webhooksTableName,
       Key: { name },
-      UpdateExpression: "SET #url = :url",
-      ExpressionAttributeNames: { "#url": "url" },
-      ExpressionAttributeValues: { ":url": newUrl },
+      UpdateExpression: "SET #url = :url, #serverId = :serverId",
+      ExpressionAttributeNames: { "#url": "url", "#serverId": "serverId" },
+      ExpressionAttributeValues: { ":url": url, ":serverId": serverId },
     }));
   }
 
@@ -311,11 +292,10 @@ class DynamoDatabase {
     name: string,
     status: "active" | "disabled",
     totalUsers: number,
-    totalChannels: number
   ): Promise<void> {
     await this.db.send(new PutCommand({
       TableName: this.serversTableName,
-      Item: { serverId, name, status, totalUsers, totalChannels },
+      Item: { serverId, name, status, totalUsers },
     }));
   }
 
@@ -324,7 +304,7 @@ class DynamoDatabase {
     name: string;
     status: "active" | "disabled";
     totalUsers: number;
-    totalChannels: number;
+    email?: string;
   } | null> {
     const result = await this.db.send(new GetCommand({
       TableName: this.serversTableName,
@@ -335,8 +315,8 @@ class DynamoDatabase {
       name: string;
       status: "active" | "disabled";
       totalUsers: number;
-      totalChannels: number;
-    } || null;
+      email?: string;
+    } | null;
   }
 
   async getAllServers(): Promise<{
@@ -344,7 +324,7 @@ class DynamoDatabase {
     name: string;
     status: "active" | "disabled";
     totalUsers: number;
-    totalChannels: number;
+    email?: string;
   }[]> {
     try {
       const result = await this.db.send(new ScanCommand({
@@ -356,7 +336,7 @@ class DynamoDatabase {
         name: string;
         status: "active" | "disabled";
         totalUsers: number;
-        totalChannels: number;
+        email?: string;
       }[];
     } catch (error) {
       console.error("Error fetching servers:", error);
