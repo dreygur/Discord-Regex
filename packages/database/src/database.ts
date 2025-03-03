@@ -5,7 +5,17 @@ import {
   ResourceInUseException,
   ResourceNotFoundException,
 } from "@aws-sdk/client-dynamodb";
-import { BatchGetCommand, DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand, ScanCommandOutput, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  BatchGetCommand,
+  DeleteCommand,
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+  ScanCommand,
+  ScanCommandOutput,
+  UpdateCommand
+} from "@aws-sdk/lib-dynamodb";
 import { IDBClientOptions } from "./types";
 
 class DynamoDatabase {
@@ -51,15 +61,26 @@ class DynamoDatabase {
 
     const command = new CreateTableCommand({
       TableName: this.webhooksTableName,
-      AttributeDefinitions: [
-        { AttributeName: "name", AttributeType: "S" },
-        { AttributeName: "serverId", AttributeType: "S" },
-        { AttributeName: "url", AttributeType: "S" },
-      ],
       KeySchema: [
-        { AttributeName: "name", KeyType: "HASH" },
         { AttributeName: "serverId", KeyType: "HASH" },
-        { AttributeName: "url", KeyType: "HASH" }
+        { AttributeName: "name", KeyType: "RANGE" },
+      ],
+      LocalSecondaryIndexes: [
+        {
+          IndexName: "name-index",
+          KeySchema: [
+            { AttributeName: "serverId", KeyType: "HASH" },
+            { AttributeName: "url", KeyType: "RANGE" }
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          }
+        }
+      ],
+      AttributeDefinitions: [
+        { AttributeName: "serverId", AttributeType: "S" },
+        { AttributeName: "name", AttributeType: "S" },
+        { AttributeName: "url", AttributeType: "S" },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -103,17 +124,13 @@ class DynamoDatabase {
 
     const command = new CreateTableCommand({
       TableName: this.serversTableName,
+      KeySchema: [
+        { AttributeName: "serverId", KeyType: "HASH" },
+        { AttributeName: "email", KeyType: "RANGE" },
+      ],
       AttributeDefinitions: [
         { AttributeName: "serverId", AttributeType: "S" },
         { AttributeName: "email", AttributeType: "S" },
-        { AttributeName: "status", AttributeType: "S" },
-        { AttributeName: "totalUsers", AttributeType: "S" },
-      ],
-      KeySchema: [
-        { AttributeName: "serverId", KeyType: "HASH" },
-        { AttributeName: "email", KeyType: "HASH" },
-        { AttributeName: "status", KeyType: "RANGE" },
-        { AttributeName: "totalUsers", KeyType: "RANGE" },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,

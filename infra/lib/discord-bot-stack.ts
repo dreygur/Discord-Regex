@@ -36,9 +36,7 @@ export class DiscordBotStack extends cdk.Stack {
     // Create an Auto Scaling Group for ECS instances
     cluster.addCapacity('BotAutoScalingGroup', {
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T2, ec2.InstanceSize.MICRO),
-      machineImage: ec2.MachineImage.genericLinux({
-        'us-east-1': ecs.EcsOptimizedImage.amazonLinux2().getImage(this).imageId,
-      }), // ECS-Optimized AMI
+      machineImage: ecs.EcsOptimizedImage.amazonLinux2(), // Use the built-in ECS optimized image
       minCapacity: 1,
       maxCapacity: 3,
     });
