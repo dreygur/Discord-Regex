@@ -12,10 +12,13 @@ export default function Navbar() {
   return (
     <nav className="bg-background shadow-md p-4 flex justify-between items-center">
       <div className="flex gap-4">
-        <Link href="/" className={`text-lg font-medium hover:text-primary ${pathname === "/" ? "text-primary font-semibold" : "text-primary/50"} transition-all duration-300`}>
+        <Link
+          href="/"
+          className={`text-lg font-medium hover:text-primary ${pathname === "/" || pathname?.includes("/server") ? "text-primary font-semibold" : "text-primary/50"} transition-all duration-300`}
+        >
           Servers
         </Link>
-        <Link href="/webhooks" className={`text-lg font-medium hover:text-primary ${pathname === "/webhooks" ? "text-primary font-semibold" : "text-primary/50"} transition-all duration-300`}>
+        <Link href="/webhooks" className={`text-lg font-medium hover:text-primary ${pathname?.includes("/webhooks") ? "text-primary font-semibold" : "text-primary/50"} transition-all duration-300`}>
           Webhooks
         </Link>
       </div>

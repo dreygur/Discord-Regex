@@ -21,7 +21,7 @@ export default function UpdateWebhook({ id }: { id: string }) {
 
   const fetchWebhook = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/${id}`);
+      const res = await fetch(`/api/webhooks/${id}`);
       if (!res.ok) throw new Error("Failed to fetch webhook");
       const data = await res.json();
       setWebhook(data);
@@ -37,13 +37,18 @@ export default function UpdateWebhook({ id }: { id: string }) {
 
     setLoading(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/${id}`, {
+      const res = await fetch(`/api/webhooks/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: webhook.name, url: webhook.url })
       });
-      toast.success("Webhook updated successfully", { id: "webhook" });
-      router.push("/webhooks");
+      if (res.ok) {
+        toast.success("Webhook updated successfully", { id: "webhook" });
+        router.push("/webhooks");
+      } else {
+        toast.error("Failed to update webhook", { id: "webhook" });
+        console.error("Failed to update webhook:", res);
+      }
     } catch (error) {
       toast.error("Error updating webhook", { id: "webhook" });
       console.error(error);

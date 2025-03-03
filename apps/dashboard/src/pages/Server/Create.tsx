@@ -22,7 +22,7 @@ export default function CreateServer() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/server`, {
+      const response = await fetch(`/api/server`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ serverId, name, status, totalUsers, totalChannels })

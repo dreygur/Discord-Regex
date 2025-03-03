@@ -23,7 +23,7 @@ export default function UpdateServer({ id }: { id: string }) {
   useEffect(() => {
     const fetchServer = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/server/${id}`);
+        const res = await fetch(`/api/server/${id}`);
         if (!res.ok) throw new Error("Failed to fetch webhook");
         const data = await res.json();
         setServer(data);
@@ -42,7 +42,7 @@ export default function UpdateServer({ id }: { id: string }) {
 
     setLoading(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/server/${id}`, {
+      await fetch(`/api/server/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +78,7 @@ export default function UpdateServer({ id }: { id: string }) {
         </div>
         <div className="flex flex-col gap-2">
           <Label>Server Owner Email</Label>
-          <Input type="text" value={server.email || ''} onChange={e => setServer({ ...server, email: e.target.value })} />
+          <Input type="text" value={server.email || ""} onChange={e => setServer({ ...server, email: e.target.value })} />
         </div>
         <div className="flex flex-col gap-2">
           <Label>Status</Label>

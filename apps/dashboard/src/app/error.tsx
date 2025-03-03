@@ -12,7 +12,7 @@ export default function Error({ error }: { error: Error }) {
   }, [error]);
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-gray-100 text-center">
+    <div className="h-screen flex flex-col items-center justify-center text-center">
       <h1 className="text-4xl font-bold text-red-600 mb-4">Something went wrong!</h1>
       <p className="text-gray-700 mb-6">We encountered an unexpected error. Please try again later.</p>
       <div className="flex gap-4">

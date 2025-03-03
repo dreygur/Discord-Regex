@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ name: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
     const webhook = await database.getWebhook((await params).name);
     if (!webhook) {
@@ -16,9 +14,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ name: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
     const { url } = await req.json();
     if (!url) {
@@ -33,9 +29,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ name: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
     await database.deleteWebhook((await params).name);
     return NextResponse.json({ message: "Webhook deleted successfully" });

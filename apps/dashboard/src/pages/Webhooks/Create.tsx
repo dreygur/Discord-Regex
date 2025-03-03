@@ -19,7 +19,7 @@ export default function CreateWebhook() {
 
     setLoading(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks`, {
+      await fetch(`/api/webhooks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, url, serverId })

@@ -13,7 +13,7 @@ interface DiscordServer {
   name: string;
   status: "active" | "disabled";
   totalUsers: number;
-  email: string;
+  email?: string;
 }
 
 export default function Server({ data }: { data: DiscordServer[] }) {
@@ -85,7 +85,7 @@ export default function Server({ data }: { data: DiscordServer[] }) {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => handleEdit(row.original.serverId)} >
+          <Button variant="outline" size="icon" onClick={() => handleEdit(row.original.serverId)}>
             <Pencil className="h-4 w-4" />
           </Button>
           {/* <Button variant="destructive" size="icon" onClick={() => openDeleteModal(row.original.id)}>

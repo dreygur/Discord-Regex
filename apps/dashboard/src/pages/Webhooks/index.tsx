@@ -6,11 +6,12 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/DataTable";
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import toast from "react-hot-toast";
 
 interface Webhook {
   name: string;
   url: string;
-  serverId: string;
+  serverId?: string;
 }
 
 export default function Webhooks({ data }: { data: Webhook[] }) {
@@ -21,14 +22,21 @@ export default function Webhooks({ data }: { data: Webhook[] }) {
 
   const handleDelete = async () => {
     if (!selectedWebhook) return;
-
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/${selectedWebhook.name}`, {
+      const res = await fetch(`/api/webhooks/${selectedWebhook.name}`, {
         method: "DELETE"
       });
-      setWebhooks(webhooks.filter(w => w.name !== selectedWebhook.name));
-      setShowDeleteModal(false);
-    } catch (error) {
+      if (res.ok) {
+        setWebhooks(webhooks.filter(w => w.name !== selectedWebhook.name));
+        setShowDeleteModal(false);
+      } else {
+        toast.error("Failed to delete webhook", { id: "webhook" });
+        console.error("Failed to delete webhook:", res);
+        setShowDeleteModal(false);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error("Failed to delete webhook", { id: "webhook" });
       console.error("Error deleting webhook:", error);
     }
   };
