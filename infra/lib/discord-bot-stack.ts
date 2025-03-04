@@ -128,6 +128,7 @@ export class DiscordBotStack extends cdk.Stack {
 
     // Grant build project permissions
     ecrRepo.grantPullPush(buildProject);
+
     // Grant read access to SSM parameters
     ssm.StringParameter.fromStringParameterName(
       this,
