@@ -7,7 +7,7 @@ import { DashboardStack } from '../lib/dashboard-stack';
 
 const app = new cdk.App();
 
-// Define the environment for all stacks to ensure they're deployed to the same account/region
+// Define the environment for all stacks
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.CDK_DEFAULT_REGION,

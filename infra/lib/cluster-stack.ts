@@ -10,14 +10,11 @@ export class ClusterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    this.vpc = new ec2.Vpc(this, 'DiscordBotAndDashboardVpc', {
-      maxAzs: 2,
-      vpcName: 'discord-bot-dashboard-vpc'
-    });
+    this.vpc = new ec2.Vpc(this, 'DiscordBotAndDashboardVpc');
 
+    // Create the cluster with the VPC
     this.cluster = new ecs.Cluster(this, 'DiscordBotAndDashboardCluster', {
       vpc: this.vpc,
-      clusterName: 'discord-bot-dashboard-cluster'
     });
   }
 }
