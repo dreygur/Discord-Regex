@@ -7,6 +7,7 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
+import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
@@ -16,11 +17,11 @@ export class DashboardStack extends cdk.Stack {
     super(scope, id, props);
 
     // 1. Create DynamoDB Table
-    const table = new dynamodb.Table(this, 'DashboardTable', {
-      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    // const table = new dynamodb.Table(this, 'DashboardTable', {
+    //   partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
+    // });
 
     // 2. Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'DashboardEcrRepo', {
@@ -35,44 +36,14 @@ export class DashboardStack extends cdk.Stack {
     // 4. Create Task Definition with placeholder image
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'DashboardTaskDef');
 
-    // Add container definition
-    const container = taskDefinition.addContainer('DashboardContainer', {
-      image: ecs.ContainerImage.fromRegistry('alpine:latest'), // Placeholder
-      environment: {
-        TABLE_NAME: table.tableName,
-      },
-      secrets: {
-        NEXT_PUBLIC_BASE_URL: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'NEXT_PUBLIC_BASE_URL', 'NEXT_PUBLIC_BASE_URL')
-        ),
-        NEXT_REGION: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'NEXT_REGION', 'NEXT_REGION')
-        ),
-        NEXT_ENDPOINT: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'ENDPOINT', 'NEXT_ENDPOINT')
-        ),
-        NEXT_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'NEXT_ACCESS_KEY_ID', 'NEXT_ACCESS_KEY_ID')
-        ),
-        NEXT_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretNameV2(this, 'NEXT_SECRET_ACCESS_KEY', 'NEXT_SECRET_ACCESS_KEY')
-        ),
-      },
-      // healthCheck: {
-      //   command: [
-      //     'CMD-SHELL',
-      //     'pgrep -f "node" || exit 1'
-      //   ],
-      //   interval: cdk.Duration.seconds(30),
-      //   retries: 3,
-      //   startPeriod: cdk.Duration.seconds(60),
-      //   timeout: cdk.Duration.seconds(5)
-      // },
-      logging: ecs.LogDrivers.awsLogs({
-        streamPrefix: 'Dashboard',
-        logRetention: logs.RetentionDays.ONE_WEEK
-      }),
+    // 5. Create Fargate Service
+    const service = new ecs.FargateService(this, 'DashboardService', {
+      cluster,
+      taskDefinition,
     });
+
+    // 6. Grant permissions
+    // table.grantReadWriteData(taskDefinition.taskRole);
 
     // 7. Create CodeStar Connection for GitHub
     const sourceOutput = new codepipeline.Artifact('SourceArtifact');
@@ -86,16 +57,6 @@ export class DashboardStack extends cdk.Stack {
       trigger: codepipeline_actions.GitHubTrigger.WEBHOOK,
     });
 
-    // 8. Create Pipeline
-    const pipeline = new codepipeline.Pipeline(this, 'DashboardPipeline', {
-      pipelineName: 'DashboardPipeline',
-    });
-
-    // Source Stage
-    pipeline.addStage({
-      stageName: 'Source',
-      actions: [githubConnection],
-    });
 
     // Build Stage
     const buildOutput = new codepipeline.Artifact('DashboardCodeBuild');
@@ -139,49 +100,48 @@ export class DashboardStack extends cdk.Stack {
 
     // Grant build project permissions
     ecrRepo.grantPullPush(buildProject);
-    buildProject.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['secretsmanager:GetSecretValue'],
-      resources: [
-        `arn:aws:secretsmanager:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:secret:dashboard-secret*`,
-      ],
-    }));
+    // buildProject.addToRolePolicy(new iam.PolicyStatement({
+    //   actions: ['secretsmanager:GetSecretValue'],
+    //   resources: [
+    //     `arn:aws:secretsmanager:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:secret:dashboard-secret*`,
+    //   ],
+    // }));
 
-    pipeline.addStage({
-      stageName: 'Build',
-      actions: [
-        new codepipeline_actions.CodeBuildAction({
-          actionName: 'DockerBuild',
-          project: buildProject,
-          input: sourceOutput,
-          outputs: [buildOutput],
-        }),
-      ],
+    const buildStage = new codepipeline_actions.CodeBuildAction({
+      actionName: 'DockerBuild',
+      project: buildProject,
+      input: sourceOutput,
+      outputs: [buildOutput],
     });
 
+    const deployStage = new codepipeline_actions.EcsDeployAction({
+      actionName: 'FargateDeploy',
+      service,
+      input: buildOutput,
+      deploymentTimeout: cdk.Duration.minutes(5),
+    });
 
-    // 6. Grant permissions
-    table.grantReadWriteData(taskDefinition.taskRole);
-
-    // 5. Create Fargate Service
-    // const service = new ecs.FargateService(this, 'DashboardService', {
-    //   cluster,
-    //   taskDefinition,
-    //   desiredCount: 1,
-    //   minHealthyPercent: 0,
-    //   healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
-    // });
-
-    // // Deploy Stage
-    // pipeline.addStage({
-    //   stageName: 'Deploy',
-    //   actions: [
-    //     new codepipeline_actions.EcsDeployAction({
-    //       actionName: 'FargateDeploy',
-    //       service,
-    //       input: buildOutput,
-    //       deploymentTimeout: cdk.Duration.minutes(5),
-    //     }),
-    //   ],
-    // });
+    // 8. Create Pipeline
+    const pipeline = new codepipeline.Pipeline(this, 'DashboardPipeline', {
+      pipelineName: 'DashboardPipeline',
+      stages: [
+        {
+          stageName: 'Source',
+          actions: [githubConnection],
+        },
+        {
+          stageName: 'Build',
+          actions: [
+            buildStage
+          ],
+        },
+        {
+          stageName: 'Deploy',
+          actions: [
+            deployStage
+          ],
+        }
+      ],
+    });
   }
 }
