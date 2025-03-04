@@ -2,25 +2,27 @@ import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
+// Define interface for props including DynamoDB tables
+export interface DiscordBotStackProps extends cdk.StackProps {
+  webhooksTable: dynamodb.Table;
+  regexTable: dynamodb.Table;
+  serversTable: dynamodb.Table;
+}
+
 export class DiscordBotStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: DiscordBotStackProps) {
     super(scope, id, props);
 
-    // 1. Create DynamoDB Table
-    const table = new dynamodb.Table(this, 'BotTable', {
-      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
-      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
+    // 1. Reference DynamoDB Tables from props
+    const { webhooksTable, regexTable, serversTable } = props;
 
     // 2. Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'BotEcrRepo', {
@@ -35,12 +37,14 @@ export class DiscordBotStack extends cdk.Stack {
     // 4. Create Task Definition with placeholder image
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
 
-    // Add container definition
+    // 6. Grant permissions to access DynamoDB tables
+    webhooksTable.grantReadWriteData(taskDefinition.taskRole);
+    regexTable.grantReadWriteData(taskDefinition.taskRole);
+    serversTable.grantReadWriteData(taskDefinition.taskRole);
+
+    // Add container definition - this is essential
     const container = taskDefinition.addContainer('BotContainer', {
-      image: ecs.ContainerImage.fromRegistry('alpine:latest'), // Placeholder
-      environment: {
-        TABLE_NAME: table.tableName,
-      },
+      image: ecs.ContainerImage.fromEcrRepository(ecrRepo),
       healthCheck: {
         command: [
           'CMD-SHELL',
@@ -55,6 +59,13 @@ export class DiscordBotStack extends cdk.Stack {
         streamPrefix: 'DiscordBot',
         logRetention: logs.RetentionDays.ONE_WEEK
       }),
+      essential: true,
+    });
+
+    // 5. Create Fargate Service
+    const service = new ecs.FargateService(this, 'BotService', {
+      cluster,
+      taskDefinition,
     });
 
     // 7. Create CodeStar Connection for GitHub
@@ -67,17 +78,6 @@ export class DiscordBotStack extends cdk.Stack {
       oauthToken: cdk.SecretValue.secretsManager('github-token'),
       output: sourceOutput,
       trigger: codepipeline_actions.GitHubTrigger.WEBHOOK,
-    });
-
-    // 8. Create Pipeline
-    const pipeline = new codepipeline.Pipeline(this, 'BotPipeline', {
-      pipelineName: 'DiscordBotPipeline',
-    });
-
-    // Source Stage
-    pipeline.addStage({
-      stageName: 'Source',
-      actions: [githubConnection],
     });
 
     // Build Stage
@@ -108,7 +108,7 @@ export class DiscordBotStack extends cdk.Stack {
               "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
               'echo "env: $BUILD_ARGS"',
 
-              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile .',
+              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile . $BUILD_ARGS',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
           },
@@ -128,48 +128,45 @@ export class DiscordBotStack extends cdk.Stack {
 
     // Grant build project permissions
     ecrRepo.grantPullPush(buildProject);
-    buildProject.addToRolePolicy(new iam.PolicyStatement({
-      actions: ['secretsmanager:GetSecretValue'],
-      resources: [
-        `arn:aws:secretsmanager:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:secret:discord-bot-secrets*`,
-      ],
-    }));
 
-    pipeline.addStage({
-      stageName: 'Build',
-      actions: [
-        new codepipeline_actions.CodeBuildAction({
-          actionName: 'DockerBuild',
-          project: buildProject,
-          input: sourceOutput,
-          outputs: [buildOutput],
-        }),
-      ],
-    });
+    // Grant read access to SSM parameters
+    ssm.StringParameter.fromStringParameterName(
+      this,
+      'bot',
+      'bot'
+    ).grantRead(buildProject);
 
-    // 6. Grant permissions
-    table.grantReadWriteData(taskDefinition.taskRole);
-
-    // 5. Create Fargate Service
-    const service = new ecs.FargateService(this, 'BotService', {
-      cluster,
-      taskDefinition,
-      desiredCount: 1,
-      healthCheckGracePeriod: cdk.Duration.minutes(3), // Default is 0
-    });
-
-
-    // Deploy Stage
-    pipeline.addStage({
-      stageName: 'Deploy',
-      actions: [
-        new codepipeline_actions.EcsDeployAction({
-          actionName: 'FargateDeploy',
-          service,
-          input: buildOutput,
-          deploymentTimeout: cdk.Duration.minutes(15),
-        }),
-      ],
+    // 8. Create Pipeline
+    const pipeline = new codepipeline.Pipeline(this, 'BotPipeline', {
+      pipelineName: 'DiscordBotPipeline',
+      stages: [
+        {
+          stageName: 'Source',
+          actions: [githubConnection],
+        },
+        {
+          stageName: 'Build',
+          actions: [
+            new codepipeline_actions.CodeBuildAction({
+              actionName: 'DockerBuild',
+              project: buildProject,
+              input: sourceOutput,
+              outputs: [buildOutput],
+            }),
+          ],
+        },
+        {
+          stageName: 'Deploy',
+          actions: [
+            new codepipeline_actions.EcsDeployAction({
+              actionName: 'FargateDeploy',
+              service,
+              input: buildOutput,
+              deploymentTimeout: cdk.Duration.minutes(15),
+            }),
+          ],
+        }
+      ]
     });
   }
 }

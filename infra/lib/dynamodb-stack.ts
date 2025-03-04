@@ -2,12 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy } from 'aws-cdk-lib';
 
-class DynamoDBStack extends cdk.Stack {
+export class DynamoDBStack extends cdk.Stack {
+  // Export tables as public properties
+  public readonly webhooksTable: dynamodb.Table;
+  public readonly regexTable: dynamodb.Table;
+  public readonly serversTable: dynamodb.Table;
+
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // Create Webhooks table
-    const webhooksTable = new dynamodb.Table(this, 'WebhooksTable', {
+    this.webhooksTable = new dynamodb.Table(this, 'WebhooksTable', {
       partitionKey: { name: 'name', type: dynamodb.AttributeType.STRING },
       tableName: 'Webhooks',
       removalPolicy: RemovalPolicy.DESTROY,
@@ -17,9 +22,8 @@ class DynamoDBStack extends cdk.Stack {
     });
 
     // Create Regex Patterns table
-    const regexTable = new dynamodb.Table(this, 'RegexTable', {
+    this.regexTable = new dynamodb.Table(this, 'RegexTable', {
       partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'regexPattern', type: dynamodb.AttributeType.STRING },
       tableName: 'RegexPatterns',
       removalPolicy: RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,
@@ -28,7 +32,7 @@ class DynamoDBStack extends cdk.Stack {
     });
 
     // Create Servers table
-    const serversTable = new dynamodb.Table(this, 'ServersTable', {
+    this.serversTable = new dynamodb.Table(this, 'ServersTable', {
       partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
       tableName: 'Servers',
       removalPolicy: RemovalPolicy.DESTROY,
@@ -39,23 +43,21 @@ class DynamoDBStack extends cdk.Stack {
 
     // Output the table names
     new cdk.CfnOutput(this, 'WebhooksTableName', {
-      value: webhooksTable.tableName,
+      value: this.webhooksTable.tableName,
       description: 'The name of the webhooks table',
       exportName: 'WebhooksTableName',
     });
 
     new cdk.CfnOutput(this, 'RegexTableName', {
-      value: regexTable.tableName,
+      value: this.regexTable.tableName,
       description: 'The name of the regex patterns table',
       exportName: 'RegexTableName',
     });
 
     new cdk.CfnOutput(this, 'ServersTableName', {
-      value: serversTable.tableName,
+      value: this.serversTable.tableName,
       description: 'The name of the servers table',
       exportName: 'ServersTableName',
     });
   }
 }
-
-export { DynamoDBStack };

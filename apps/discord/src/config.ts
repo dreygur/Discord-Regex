@@ -9,8 +9,4 @@ export const config: Record<string, string | number> = {
   token: process.env.TOKEN as string,
   color: 0x0099FF,
   thumbnail: process.env.THUMBNAIL as string,
-  region: process.env.REGION as string,
-  endpoint: process.env.ENDPOINT as string,
-  accessKeyId: process.env.ACCESS_KEY_ID as string,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY as string
 }

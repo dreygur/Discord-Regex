@@ -14,15 +14,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { serverId, name, status, totalUsers, email } = await req.json();
+    const { serverId, name, status, totalUsers } = await req.json();
 
     if (!serverId || !name) {
       return NextResponse.json({ message: "Server ID and Name are required" }, { status: 400 });
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    await database.createServer(serverId, name, status, totalUsers, email);
+    await database.createServer(serverId, name, status, totalUsers);
     return NextResponse.json({ message: "Server created successfully" }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ message: "Internal Server Error", error }, { status: 500 });
