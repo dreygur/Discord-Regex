@@ -15,6 +15,8 @@ export interface DiscordBotStackProps extends cdk.StackProps {
   webhooksTable: dynamodb.Table;
   regexTable: dynamodb.Table;
   serversTable: dynamodb.Table;
+  cluster: ecs.Cluster;
+  vpc: ec2.Vpc;
 }
 
 export class DiscordBotStack extends cdk.Stack {
@@ -22,7 +24,7 @@ export class DiscordBotStack extends cdk.Stack {
     super(scope, id, props);
 
     // 1. Reference DynamoDB Tables from props
-    const { webhooksTable, regexTable, serversTable } = props;
+    const { webhooksTable, regexTable, serversTable, cluster, vpc } = props;
 
     // 2. Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'BotEcrRepo', {
@@ -31,8 +33,8 @@ export class DiscordBotStack extends cdk.Stack {
     });
 
     // 3. Create ECS Cluster
-    const vpc = new ec2.Vpc(this, 'BotVpc', { maxAzs: 2 });
-    const cluster = new ecs.Cluster(this, 'BotCluster', { vpc });
+    // const vpc = new ec2.Vpc(this, 'BotVpc', { maxAzs: 2 });
+    // const cluster = new ecs.Cluster(this, 'BotCluster', { vpc });
 
     // 4. Create Task Definition with placeholder image
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
