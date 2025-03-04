@@ -1,4 +1,5 @@
-FROM node:18-alpine AS base
+# FROM node:18-alpine AS base
+FROM public.ecr.aws/docker/library/node:22.14.0-alpine AS base
 
 # Install pnpm and turbo
 RUN corepack enable && corepack prepare pnpm@latest --activate
