@@ -29,7 +29,7 @@ class DynamoDatabase {
     if (!options.region) {
       this.client = new DynamoDBClient();
     } else {
-      this.client = new DynamoDBClient();
+      this.client = new DynamoDBClient(options);
     }
     this.db = DynamoDBDocumentClient.from(this.client);
     this.webhooksTableName = options.webhooksTableName;
