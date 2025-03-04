@@ -25,7 +25,7 @@ export default function Navbar() {
       <div>
         {userData?.user ? (
           <div className="flex items-center gap-4">
-            <span className="text-gray-600">{userData?.user.email}</span>
+            <span className="text-primary">{userData?.user.email}</span>
             <Button onClick={userData?.logout} variant="outline">
               Logout
             </Button>

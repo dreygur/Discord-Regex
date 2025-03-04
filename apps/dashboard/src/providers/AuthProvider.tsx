@@ -2,36 +2,39 @@
 
 import { ReactNode, createContext, useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface AuthContextType {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setUser: React.Dispatch<React.SetStateAction<any>>;
+  user: { email: string } | null;
+  setUser: React.Dispatch<React.SetStateAction<{ email: string } | null>>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const defaultAuthContext: AuthContextType = {
+  user: { email: "" },
+  setUser: () => {},
+  login: async () => {},
+  logout: () => {}
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<{ email: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if the user is already logged in from localStorage/session
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     } else {
-      // TODO
-      // router.push("/login");
+      router.push("/login");
     }
-  }, []);
+  }, [router]);
 
   const login = async (email: string, password: string) => {
     try {
-      // Example authentication logic (replace with actual API call)
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem("user", JSON.stringify(data.user));
         router.push("/");
       } else {
-        throw new Error(data.message);
+        toast.error(data.message);
       }
     } catch (error) {
       console.error("Login error:", error);
