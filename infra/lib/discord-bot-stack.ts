@@ -108,7 +108,7 @@ export class DiscordBotStack extends cdk.Stack {
               "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
               'echo "env: $BUILD_ARGS"',
 
-              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile .',
+              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile . $BUILD_ARGS',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
           },

@@ -11,14 +11,14 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 // Define interface for props including DynamoDB tables
-export interface DiscordBotStackProps extends cdk.StackProps {
+export interface DashboardStackProps extends cdk.StackProps {
   webhooksTable: dynamodb.Table;
   regexTable: dynamodb.Table;
   serversTable: dynamodb.Table;
 }
 
 export class DashboardStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: DiscordBotStackProps) {
+  constructor(scope: Construct, id: string, props: DashboardStackProps) {
     super(scope, id, props);
 
     // 1. Reference DynamoDB Tables from props
@@ -103,13 +103,13 @@ export class DashboardStack extends cdk.Stack {
           },
           build: {
             commands: [
-              'APP_ENV_CONTENT=$(aws ssm get-parameter --name "bot" --with-decryption --query "Parameter.Value" --output text)',
+              'APP_ENV_CONTENT=$(aws ssm get-parameter --name "dashboard" --with-decryption --query "Parameter.Value" --output text)',
               'echo "APP_ENV_CONTENT: $APP_ENV_CONTENT"',
 
               "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
               'echo "env: $BUILD_ARGS"',
 
-              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile .',
+              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile . $BUILD_ARGS',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
           },
@@ -117,7 +117,7 @@ export class DashboardStack extends cdk.Stack {
             commands: [
               'docker push $ECR_REPO_URI:latest',
               'docker push $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-              'printf "[{\\"name\\":\\"BotContainer\\",\\"imageUri\\":\\"%s\\"}]" $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json',
+              'printf "[{\\"name\\":\\"DashboardContainer\\",\\"imageUri\\":\\"%s\\"}]" $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json',
             ],
           },
         },
@@ -137,8 +137,8 @@ export class DashboardStack extends cdk.Stack {
     // Grant read access to SSM parameters
     ssm.StringParameter.fromStringParameterName(
       this,
-      'bot',
-      'bot'
+      'dashboard',
+      'dashboard'
     ).grantRead(buildProject);
 
     // 8. Create Pipeline

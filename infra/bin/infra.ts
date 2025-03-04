@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import { DiscordBotStack } from '../lib/discord-bot-stack';
-// import { DashboardStack } from '../lib/dashboard-stack';
+import { DashboardStack } from '../lib/dashboard-stack';
 import { DynamoDBStack } from '../lib/dynamodb-stack';
 
 const app = new cdk.App();
@@ -20,6 +20,15 @@ new DiscordBotStack(app, 'DiscordBotStack', {
   },
 });
 
-// new DashboardStack(app, 'DashboardStack');
+// Then, create the Discord bot stack and pass the tables as props
+new DashboardStack(app, 'DashboardStack', {
+  webhooksTable: dbStack.webhooksTable,
+  regexTable: dbStack.regexTable,
+  serversTable: dbStack.serversTable,
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+});
 
 app.synth();
