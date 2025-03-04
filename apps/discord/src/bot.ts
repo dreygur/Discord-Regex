@@ -17,26 +17,36 @@ export const client: Client = new Client({
 // Read TEXT message
 client.on(Events.MessageCreate, (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   if (message.author.bot) return;
-  regexHandler(message);
+  try {
+    regexHandler(message);
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 // Save a server when the bot is connected to it
 client.on(Events.GuildCreate, async (guild: Guild) => {
-  // await database.createServer(guild.id, guild.name, 'disabled', guild.memberCount, 0);
-  await database.createServer(guild.id, guild.name, 'active', guild.memberCount, 0);
+  try {
+    await database.createServer(guild.id, guild.name, 'active', guild.memberCount);
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 // Register all the slash commands
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isAutocomplete()) {
-    // Do the autocompletion here
-    // const focusValue = interaction.options.getFocused(true);
-    const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
+    try {
+      // Do the autocompletion here
+      // const focusValue = interaction.options.getFocused(true);
+      const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
 
-    await interaction.respond(
-      choices.map(choice => ({ name: choice.name, value: choice.name }))
-    );
-
+      await interaction.respond(
+        choices.map(choice => ({ name: choice.name, value: choice.name }))
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
   if (interaction.isChatInputCommand()) {
     const command = commands.get(interaction.commandName);

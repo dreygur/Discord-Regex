@@ -9,10 +9,14 @@ services:
       AWS_ACCESS_KEY_ID: dummy
       AWS_SECRET_ACCESS_KEY: dummy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
+      test:
+        [
+          "CMD-SHELL",
+          'if [ "$(curl -s -o /dev/null -I -w ''%{http_code}'' http://dynamodb:8000)" == "400" ]; then exit 0; else exit 1; fi',
+        ]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks:
       - discord-network
 
@@ -27,10 +31,12 @@ services:
         NEXT_ACCESS_KEY_ID: jmj0pe
         NEXT_SECRET_ACCESS_KEY: jkq4o6
     container_name: dashboard
+    restart: always
     ports:
       - "3000:3000"
     depends_on:
-      - dynamodb
+      dynamodb:
+        condition: service_healthy
     networks:
       - discord-network
 
@@ -46,8 +52,10 @@ services:
         ACCESS_KEY_ID: jmj0pe
         SECRET_ACCESS_KEY: jkq4o6
     container_name: discord
+    restart: always
     depends_on:
-      - dynamodb
+      dynamodb:
+        condition: service_healthy
     networks:
       - discord-network
 

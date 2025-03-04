@@ -40,7 +40,7 @@ export default function UpdateWebhook({ id }: { id: string }) {
       const res = await fetch(`/api/webhooks/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: webhook.name, url: webhook.url })
+        body: JSON.stringify({ name: webhook.name, url: webhook.url, serverId: webhook.serverId })
       });
       if (res.ok) {
         toast.success("Webhook updated successfully", { id: "webhook" });
@@ -66,7 +66,7 @@ export default function UpdateWebhook({ id }: { id: string }) {
       <form onSubmit={handleUpdate} className="space-y-4">
         <div className="flex flex-col gap-2">
           <Label>Name</Label>
-          <Input value={webhook.name} onChange={e => setWebhook({ ...webhook, name: e.target.value })} required />
+          <Input value={webhook.name} onChange={e => setWebhook({ ...webhook, name: e.target.value })} disabled />
         </div>
         <div className="flex flex-col gap-2">
           <Label>URL</Label>
