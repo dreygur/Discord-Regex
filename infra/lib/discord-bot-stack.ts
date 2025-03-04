@@ -10,16 +10,19 @@ import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
+// Define interface for props including DynamoDB tables
+export interface DiscordBotStackProps extends cdk.StackProps {
+  webhooksTable: dynamodb.Table;
+  regexTable: dynamodb.Table;
+  serversTable: dynamodb.Table;
+}
+
 export class DiscordBotStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: DiscordBotStackProps) {
     super(scope, id, props);
 
-    // 1. Create DynamoDB Table
-    // const table = new dynamodb.Table(this, 'BotTable', {
-    //   partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
-    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
-    // });
+    // 1. Reference DynamoDB Tables from props
+    const { webhooksTable, regexTable, serversTable } = props;
 
     // 2. Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'BotEcrRepo', {
@@ -34,12 +37,14 @@ export class DiscordBotStack extends cdk.Stack {
     // 4. Create Task Definition with placeholder image
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
 
+    // 6. Grant permissions to access DynamoDB tables
+    webhooksTable.grantReadWriteData(taskDefinition.taskRole);
+    regexTable.grantReadWriteData(taskDefinition.taskRole);
+    serversTable.grantReadWriteData(taskDefinition.taskRole);
+
     // Add container definition - this is essential
     const container = taskDefinition.addContainer('BotContainer', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepo),
-      // environment: {
-      //   TABLE_NAME: table.tableName,
-      // },
       healthCheck: {
         command: [
           'CMD-SHELL',
@@ -62,8 +67,6 @@ export class DiscordBotStack extends cdk.Stack {
       cluster,
       taskDefinition,
     });
-    // 6. Grant permissions
-    // table.grantReadWriteData(taskDefinition.taskRole);
 
     // 7. Create CodeStar Connection for GitHub
     const sourceOutput = new codepipeline.Artifact('SourceArtifact');
@@ -131,12 +134,6 @@ export class DiscordBotStack extends cdk.Stack {
       'bot',
       'bot'
     ).grantRead(buildProject);
-    // buildProject.addToRolePolicy(new iam.PolicyStatement({
-    //   actions: ['secretsmanager:GetSecretValue'],
-    //   resources: [
-    //     `arn:aws:secretsmanager:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:secret:bot*`,
-    //   ],
-    // }));
 
     // 8. Create Pipeline
     const pipeline = new codepipeline.Pipeline(this, 'BotPipeline', {

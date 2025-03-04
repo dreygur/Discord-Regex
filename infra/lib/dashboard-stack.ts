@@ -2,26 +2,27 @@ import * as cdk from 'aws-cdk-lib';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
-import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
+// Define interface for props including DynamoDB tables
+export interface DiscordBotStackProps extends cdk.StackProps {
+  webhooksTable: dynamodb.Table;
+  regexTable: dynamodb.Table;
+  serversTable: dynamodb.Table;
+}
+
 export class DashboardStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: DiscordBotStackProps) {
     super(scope, id, props);
 
-    // 1. Create DynamoDB Table
-    // const table = new dynamodb.Table(this, 'DashboardTable', {
-    //   partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
-    //   billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-    //   removalPolicy: cdk.RemovalPolicy.DESTROY,
-    // });
+    // 1. Reference DynamoDB Tables from props
+    const { webhooksTable, regexTable, serversTable } = props;
 
     // 2. Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'DashboardEcrRepo', {
@@ -36,14 +37,36 @@ export class DashboardStack extends cdk.Stack {
     // 4. Create Task Definition with placeholder image
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'DashboardTaskDef');
 
+    // 6. Grant permissions to access DynamoDB tables
+    webhooksTable.grantReadWriteData(taskDefinition.taskRole);
+    regexTable.grantReadWriteData(taskDefinition.taskRole);
+    serversTable.grantReadWriteData(taskDefinition.taskRole);
+
     // 5. Create Fargate Service
     const service = new ecs.FargateService(this, 'DashboardService', {
       cluster,
       taskDefinition,
     });
 
-    // 6. Grant permissions
-    // table.grantReadWriteData(taskDefinition.taskRole);
+    // Add container definition - this is essential
+    const container = taskDefinition.addContainer('DashboardContainer', {
+      image: ecs.ContainerImage.fromEcrRepository(ecrRepo),
+      healthCheck: {
+        command: [
+          'CMD-SHELL',
+          'pgrep -f "node" || exit 1'
+        ],
+        interval: cdk.Duration.seconds(30),
+        retries: 3,
+        startPeriod: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(5)
+      },
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: 'Dashboard',
+        logRetention: logs.RetentionDays.ONE_WEEK
+      }),
+      essential: true,
+    });
 
     // 7. Create CodeStar Connection for GitHub
     const sourceOutput = new codepipeline.Artifact('SourceArtifact');
@@ -80,7 +103,13 @@ export class DashboardStack extends cdk.Stack {
           },
           build: {
             commands: [
-              'docker build -t $ECR_REPO_URI:latest -f apps/dashboard/Dockerfile .',
+              'APP_ENV_CONTENT=$(aws ssm get-parameter --name "bot" --with-decryption --query "Parameter.Value" --output text)',
+              'echo "APP_ENV_CONTENT: $APP_ENV_CONTENT"',
+
+              "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
+              'echo "env: $BUILD_ARGS"',
+
+              'docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile .',
               'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
             ],
           },
@@ -100,26 +129,17 @@ export class DashboardStack extends cdk.Stack {
 
     // Grant build project permissions
     ecrRepo.grantPullPush(buildProject);
-    // buildProject.addToRolePolicy(new iam.PolicyStatement({
-    //   actions: ['secretsmanager:GetSecretValue'],
-    //   resources: [
-    //     `arn:aws:secretsmanager:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:secret:dashboard-secret*`,
-    //   ],
-    // }));
-
-    const buildStage = new codepipeline_actions.CodeBuildAction({
-      actionName: 'DockerBuild',
-      project: buildProject,
-      input: sourceOutput,
-      outputs: [buildOutput],
+    container.addPortMappings({
+      containerPort: 3000,
+      hostPort: 3000,
     });
 
-    const deployStage = new codepipeline_actions.EcsDeployAction({
-      actionName: 'FargateDeploy',
-      service,
-      input: buildOutput,
-      deploymentTimeout: cdk.Duration.minutes(5),
-    });
+    // Grant read access to SSM parameters
+    ssm.StringParameter.fromStringParameterName(
+      this,
+      'bot',
+      'bot'
+    ).grantRead(buildProject);
 
     // 8. Create Pipeline
     const pipeline = new codepipeline.Pipeline(this, 'DashboardPipeline', {
@@ -132,13 +152,23 @@ export class DashboardStack extends cdk.Stack {
         {
           stageName: 'Build',
           actions: [
-            buildStage
+            new codepipeline_actions.CodeBuildAction({
+              actionName: 'DockerBuild',
+              project: buildProject,
+              input: sourceOutput,
+              outputs: [buildOutput],
+            })
           ],
         },
         {
           stageName: 'Deploy',
           actions: [
-            deployStage
+            new codepipeline_actions.EcsDeployAction({
+              actionName: 'FargateDeploy',
+              service,
+              input: buildOutput,
+              deploymentTimeout: cdk.Duration.minutes(5),
+            })
           ],
         }
       ],

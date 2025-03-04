@@ -26,7 +26,11 @@ class DynamoDatabase {
   private serversTableName: string;
 
   constructor(options: IDBClientOptions) {
-    this.client = new DynamoDBClient(options);
+    if (!options.region) {
+      this.client = new DynamoDBClient();
+    } else {
+      this.client = new DynamoDBClient();
+    }
     this.db = DynamoDBDocumentClient.from(this.client);
     this.webhooksTableName = options.webhooksTableName;
     this.regexTableName = options.regexTableName;
