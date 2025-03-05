@@ -39,4 +39,4 @@ new DashboardStack(app, 'DashboardStack', {
   env,
 });
 
-app.synth();
+// app.synth();
