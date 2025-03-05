@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 export default function UpdateWebhook({ id }: { id: string }) {
   const router = useRouter();
   const [webhook, setWebhook] = useState<{ name: string; url: string; serverId: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;

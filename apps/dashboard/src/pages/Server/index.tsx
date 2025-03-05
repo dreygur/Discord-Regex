@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared/DataTable";
@@ -16,9 +16,9 @@ interface DiscordServer {
   email?: string;
 }
 
-export default function Server({ data }: { data: DiscordServer[] }) {
+export default function Server() {
   const router = useRouter();
-  const [servers, setServers] = useState<DiscordServer[]>(data || []);
+  const [servers, setServers] = useState<DiscordServer[]>([]);
 
   // Toggle Status Handler
   const handleToggleStatus = async (serverId: string, currentStatus: "active" | "disabled") => {
@@ -95,6 +95,16 @@ export default function Server({ data }: { data: DiscordServer[] }) {
       )
     }
   ];
+
+  useEffect(() => {
+    fetch(`/api/server`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    })
+      .then(res => res.json())
+      .then(setServers)
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="p-6">

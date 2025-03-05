@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,8 @@ interface Webhook {
   serverId?: string;
 }
 
-export default function Webhooks({ data }: { data: Webhook[] }) {
-  const [webhooks, setWebhooks] = useState<Webhook[]>(data || []);
+export default function Webhooks() {
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const router = useRouter();
@@ -81,6 +81,16 @@ export default function Webhooks({ data }: { data: Webhook[] }) {
       )
     }
   ];
+
+  useEffect(() => {
+    fetch(`/api/webhooks`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    })
+      .then(res => res.json())
+      .then(setWebhooks)
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="p-6">
