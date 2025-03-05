@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, createContext, useState, useEffect, useContext } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 interface AuthContextType {
@@ -23,6 +23,7 @@ const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<{ email: string } | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       router.push("/login");
     }
-  }, [router]);
+  }, [router, pathname]);
 
   const login = async (email: string, password: string) => {
     try {
