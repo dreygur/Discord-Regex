@@ -17,11 +17,6 @@ ENV NEXT_ENDPOINT=$NEXT_ENDPOINT
 ENV NEXT_ACCESS_KEY_ID=$NEXT_ACCESS_KEY_ID
 ENV NEXT_SECRET_ACCESS_KEY=$NEXT_SECRET_ACCESS_KEY
 
-# Set the hostname to 0.0.0.0
-ENV HOSTNAME 0.0.0.0
-# ENV HOSTNAME=${HOSTNAME:-0.0.0.0}
-# ENV PORT=${PORT:-3000}
-
 FROM base AS builder
 RUN apk update
 RUN apk add --no-cache libc6-compat
@@ -35,10 +30,8 @@ RUN turbo prune @discord/dashboard --docker
 
 # Add lockfile and package.json's of isolated subworkspace
 FROM base AS installer
-RUN apk update
-RUN apk add --no-cache libc6-compat
+# Set working directory
 WORKDIR /app
-
 
 # First install the dependencies (as they change less often)
 COPY --from=builder /app/out/json/ .
@@ -67,4 +60,4 @@ COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/standal
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/public ./apps/dashboard/public
 
-CMD node apps/dashboard/server.js
+CMD HOSTNAME=0.0.0.0 node apps/dashboard/server.js
