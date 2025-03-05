@@ -10,3 +10,5 @@ export const config: Record<string, string | number> = {
   color: 0x0099FF,
   thumbnail: process.env.THUMBNAIL as string,
 }
+
+console.log({ config });
