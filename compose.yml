@@ -26,6 +26,8 @@ services:
         NEXT_ENDPOINT: http://dynamodb:8000
         NEXT_ACCESS_KEY_ID: jmj0pe
         NEXT_SECRET_ACCESS_KEY: jkq4o6
+        NEXT_HASHED_PASSWORD: $2y$10$GCYCYeZs5RZNZCc6QjSVheiMfaW5XFSbVOEcEb88ahihi7dac060q
+        NEXT_VALID_EMAIL: wesley@mail.com
     container_name: dashboard
     restart: always
     ports:
