@@ -1,20 +1,26 @@
-# Bot Dashboard
+# The Bot
 
-This dashboard uses [Next.js](https://nextjs.org/) v15 with [AppRouter](https://nextjs.org/docs/app) and [SSR](https://nextjs.org/docs/pages/building-your-application/rendering/server-side-rendering)
+This bot uses [DISCORD.JS](https://discord.js.org/docs/packages/discord.js/14.18.0) with Typescript to ensure maximum typesafety and clean codebase.
 
 ## Use these environment variables as needed
 
 ```sh
-# Password SHA256 hash as hex and lowercase
-NEXT_HASHED_PASSWORD=
-# Email address to be used as login email
-NEXT_VALID_EMAIL=wesley@mail.com
+# Discord Bot Token
+TOKEN=
+# Thumbnail for embedded messages
+THUMBNAIL=
+# Timeout for memcache
+CACHE_TTL=
+# Max retry count for task Quee
+DEFAULT_RETRIES=
+# Delay between each retries for task Queue
+DEFAULT_DELAY=
 
 # Only Required if Dynamolocal is used
-NEXT_REGION=
-NEXT_ENDPOINT=
-NEXT_ACCESS_KEY_ID=
-NEXT_SECRET_ACCESS_KEY=
+REGION=
+ENDPOINT=
+ACCESS_KEY_ID=
+SECRET_ACCESS_KEY=
 ```
 
 You will also see a `env.example` file in this directory.
