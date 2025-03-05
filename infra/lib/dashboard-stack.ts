@@ -17,6 +17,7 @@ export interface DashboardStackProps extends cdk.StackProps {
   serversTable: dynamodb.Table;
   cluster: ecs.Cluster;
   vpc: ec2.Vpc;
+  env: cdk.Environment;
 }
 
 export class DashboardStack extends cdk.Stack {
@@ -24,7 +25,7 @@ export class DashboardStack extends cdk.Stack {
     super(scope, id, props);
 
     // 1. Reference DynamoDB Tables from props
-    const { webhooksTable, regexTable, serversTable, cluster, vpc } = props;
+    const { webhooksTable, regexTable, serversTable, cluster } = props;
 
     // 2. Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'DashboardEcrRepo', {

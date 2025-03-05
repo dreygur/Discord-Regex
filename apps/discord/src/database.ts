@@ -1,10 +1,10 @@
 import { DynamoDatabase } from '@discord/database';
 import type { IDBClientOptions } from '@discord/database/dist/types';
 
-const region = process.env.REGION as string;
-const endpoint = process.env.ENDPOINT as string;
-const accessKeyId = process.env.ACCESS_KEY_ID as string;
-const secretAccessKey = process.env.SECRET_ACCESS_KEY as string;
+const region = process.env.REGION;
+const endpoint = process.env.ENDPOINT;
+const accessKeyId = process.env.ACCESS_KEY_ID;
+const secretAccessKey = process.env.SECRET_ACCESS_KEY;
 
 let config: IDBClientOptions = {
   webhooksTableName: "Webhooks",
@@ -15,11 +15,9 @@ let config: IDBClientOptions = {
 if (region && endpoint && accessKeyId && secretAccessKey) {
   config = {
     ...config,
-    region: process.env.REGION as string,
-    endpoint: process.env.ENDPOINT as string,
+    region, endpoint,
     credentials: {
-      accessKeyId: process.env.ACCESS_KEY_ID as string,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY as string,
+      accessKeyId, secretAccessKey
     },
   };
 }
