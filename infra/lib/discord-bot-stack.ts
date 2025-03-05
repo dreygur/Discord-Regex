@@ -42,9 +42,23 @@ export class DiscordBotStack extends cdk.Stack {
     regexTable.grantReadWriteData(taskDefinition.taskRole);
     serversTable.grantReadWriteData(taskDefinition.taskRole);
 
-    // Attach policy to allow DescribeTable
+    // Attach policy to make operations on DynamoDB tables
     taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:DescribeTable'],
+      actions: [
+        'dynamodb:DescribeTable',
+        'dynamodb:GetItem',
+        'dynamodb:PutItem',
+        'dynamodb:UpdateItem',
+        'dynamodb:DeleteItem',
+        'dynamodb:Scan',
+        'dynamodb:Query',
+        'dynamodb:BatchWriteItem',
+        'dynamodb:BatchGetItem',
+        'dynamodb:BatchWriteItem',
+        'dynamodb:BatchGetItem',
+        'dynamodb:BatchWriteItem',
+        'dynamodb:BatchGetItem',
+      ],
       resources: [
         webhooksTable.tableArn,
         regexTable.tableArn,
