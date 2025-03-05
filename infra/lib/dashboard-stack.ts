@@ -8,6 +8,7 @@ import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 
 // Define interface for props including DynamoDB tables
@@ -27,6 +28,18 @@ export class DashboardStack extends cdk.Stack {
     // Reference DynamoDB Tables from props
     const { webhooksTable, regexTable, serversTable, cluster } = props;
 
+    // Create ALB
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
+      vpc: props.vpc,
+      internetFacing: true, // Make it publicly accessible
+    });
+
+    // Create Listener
+    const listener = loadBalancer.addListener('Listener', {
+      port: 80,
+      open: true,
+    });
+
     // Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'DashboardEcrRepo', {
       repositoryName: 'dashboard',
@@ -45,6 +58,32 @@ export class DashboardStack extends cdk.Stack {
     const service = new ecs.FargateService(this, 'DashboardService', {
       cluster,
       taskDefinition,
+    });
+
+    const securityGroup = new ec2.SecurityGroup(this, 'DashboardSecurityGroup', {
+      vpc: props.vpc,
+      allowAllOutbound: true, // Required for internet access
+    });
+
+    // Allow HTTP Traffic
+    securityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(3000), 'Allow traffic to Dashboard');
+
+    // Attach Security Group to Fargate Service
+    service.connections.addSecurityGroup(securityGroup);
+
+    // Attach Target Group to Service
+    const targetGroup = listener.addTargets('DashboardTarget', {
+      port: 3000,
+      targets: [service],
+      healthCheck: {
+        path: '/',
+        interval: cdk.Duration.seconds(30),
+      },
+    });
+
+    // Output Load Balancer URL
+    new cdk.CfnOutput(this, 'ALBURL', {
+      value: loadBalancer.loadBalancerDnsName,
     });
 
     // Add container definition - this is essential
