@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 
-const storedHashedPassword = process.env.NEXT_HASHED_PASSWORD || "";
+const storedHashedPassword = "$2y$14$" + process.env.NEXT_PASSWORD || "";
 const validEmail = process.env.NEXT_VALID_EMAIL || "";
 
 export async function POST(req: Request) {
