@@ -10,12 +10,16 @@ ARG NEXT_REGION
 ARG NEXT_ENDPOINT
 ARG NEXT_ACCESS_KEY_ID
 ARG NEXT_SECRET_ACCESS_KEY
+ARG NEXT_HASHED_PASSWORD
+ARG NEXT_VALID_EMAIL
 
 ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
 ENV NEXT_REGION=$NEXT_REGION
 ENV NEXT_ENDPOINT=$NEXT_ENDPOINT
 ENV NEXT_ACCESS_KEY_ID=$NEXT_ACCESS_KEY_ID
 ENV NEXT_SECRET_ACCESS_KEY=$NEXT_SECRET_ACCESS_KEY
+ENV NEXT_HASHED_PASSWORD=$NEXT_HASHED_PASSWORD
+ENV NEXT_VALID_EMAIL=$NEXT_VALID_EMAIL
 
 FROM base AS builder
 RUN apk update
@@ -48,7 +52,8 @@ RUN pnpm turbo run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
@@ -60,4 +65,4 @@ COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/standal
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/public ./apps/dashboard/public
 
-CMD HOSTNAME=0.0.0.0 node apps/dashboard/server.js
+CMD node apps/dashboard/server.js
