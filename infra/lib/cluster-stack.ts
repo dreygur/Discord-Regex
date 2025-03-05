@@ -10,7 +10,23 @@ export class ClusterStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    this.vpc = new ec2.Vpc(this, 'DiscordBotAndDashboardVpc');
+    // Create the VPC with NAT Gateway
+    this.vpc = new ec2.Vpc(this, 'DiscordBotAndDashboardVpc', {
+      maxAzs: 2,
+      natGateways: 1,
+      subnetConfiguration: [
+        {
+          name: 'public',
+          subnetType: ec2.SubnetType.PUBLIC,
+          cidrMask: 24,
+        },
+        {
+          name: 'private',
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          cidrMask: 24,
+        },
+      ],
+    });
 
     // Create the cluster with the VPC
     this.cluster = new ecs.Cluster(this, 'DiscordBotAndDashboardCluster', {
