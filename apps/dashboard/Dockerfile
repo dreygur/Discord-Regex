@@ -58,8 +58,8 @@ RUN adduser --system --uid 1001 dashboard
 USER dashboard
 
 # Copy built application
-COPY --from=installer --chown=nextjs:nodejs /app/apps/dashboard/.next/standalone ./
-COPY --from=installer --chown=nextjs:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
-COPY --from=installer --chown=nextjs:nodejs /app/apps/dashboard/public ./apps/dashboard/public
+COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/standalone ./
+COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
+COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/public ./apps/dashboard/public
 
 CMD node apps/dashboard/server.js
