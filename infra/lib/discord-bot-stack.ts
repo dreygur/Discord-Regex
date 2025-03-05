@@ -8,7 +8,6 @@ import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 // Define interface for props including DynamoDB tables
@@ -38,33 +37,9 @@ export class DiscordBotStack extends cdk.Stack {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'BotTaskDef');
 
     // Grant permissions to access DynamoDB tables
-    webhooksTable.grantReadWriteData(taskDefinition.taskRole);
-    regexTable.grantReadWriteData(taskDefinition.taskRole);
-    serversTable.grantReadWriteData(taskDefinition.taskRole);
-
-    // Attach policy to make operations on DynamoDB tables
-    taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
-      actions: [
-        'dynamodb:DescribeTable',
-        'dynamodb:GetItem',
-        'dynamodb:PutItem',
-        'dynamodb:UpdateItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:Scan',
-        'dynamodb:Query',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:BatchGetItem',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:BatchGetItem',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:BatchGetItem',
-      ],
-      resources: [
-        webhooksTable.tableArn,
-        regexTable.tableArn,
-        serversTable.tableArn,
-      ],
-    }));
+    webhooksTable.grantFullAccess(taskDefinition.taskRole);
+    regexTable.grantFullAccess(taskDefinition.taskRole);
+    serversTable.grantFullAccess(taskDefinition.taskRole);
 
     // Add container definition - this is essential
     taskDefinition.addContainer('BotContainer', {
@@ -161,7 +136,7 @@ export class DiscordBotStack extends cdk.Stack {
     ).grantRead(buildProject);
 
     // Create Pipeline
-    new codepipeline.Pipeline(this, 'BotPipeline', {
+    const pipeline = new codepipeline.Pipeline(this, 'BotPipeline', {
       pipelineName: 'DiscordBotPipeline',
       stages: [
         {
@@ -179,18 +154,21 @@ export class DiscordBotStack extends cdk.Stack {
             }),
           ],
         },
-        {
-          stageName: 'Deploy',
-          actions: [
-            new codepipeline_actions.EcsDeployAction({
-              actionName: 'FargateDeploy',
-              service,
-              input: buildOutput,
-              deploymentTimeout: cdk.Duration.minutes(15),
-            }),
-          ],
-        }
       ]
+    });
+
+    // Add Deploy Stage
+    // Comment out this section when first time deploying the pipeline
+    pipeline.addStage({
+      stageName: 'Deploy',
+      actions: [
+        new codepipeline_actions.EcsDeployAction({
+          actionName: 'FargateDeploy',
+          service,
+          input: buildOutput,
+          deploymentTimeout: cdk.Duration.minutes(15),
+        }),
+      ],
     });
   }
 }

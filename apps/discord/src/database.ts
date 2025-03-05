@@ -9,7 +9,7 @@ const secretAccessKey = process.env.SECRET_ACCESS_KEY;
 let config: IDBClientOptions = {
   webhooksTableName: "Webhooks",
   regexTableName: "RegexPatterns",
-  serversTableName: "DiscordServers",
+  serversTableName: "Servers",
 }
 
 if (region && endpoint && accessKeyId && secretAccessKey) {

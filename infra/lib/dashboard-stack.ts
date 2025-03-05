@@ -9,7 +9,6 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 // Define interface for props including DynamoDB tables
@@ -51,33 +50,9 @@ export class DashboardStack extends cdk.Stack {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'DashboardTaskDef');
 
     // Grant permissions to access DynamoDB tables
-    webhooksTable.grantReadWriteData(taskDefinition.taskRole);
-    regexTable.grantReadWriteData(taskDefinition.taskRole);
-    serversTable.grantReadWriteData(taskDefinition.taskRole);
-
-    // Attach policy to make operations on DynamoDB tables
-    taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
-      actions: [
-        'dynamodb:DescribeTable',
-        'dynamodb:GetItem',
-        'dynamodb:PutItem',
-        'dynamodb:UpdateItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:Scan',
-        'dynamodb:Query',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:BatchGetItem',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:BatchGetItem',
-        'dynamodb:BatchWriteItem',
-        'dynamodb:BatchGetItem',
-      ],
-      resources: [
-        webhooksTable.tableArn,
-        regexTable.tableArn,
-        serversTable.tableArn,
-      ],
-    }));
+    webhooksTable.grantFullAccess(taskDefinition.taskRole);
+    regexTable.grantFullAccess(taskDefinition.taskRole);
+    serversTable.grantFullAccess(taskDefinition.taskRole);
 
     // Create Fargate Service
     const service = new ecs.FargateService(this, 'DashboardService', {
@@ -206,7 +181,7 @@ export class DashboardStack extends cdk.Stack {
     });
 
     // Create Pipeline
-    new codepipeline.Pipeline(this, 'DashboardPipeline', {
+    const pipeline = new codepipeline.Pipeline(this, 'DashboardPipeline', {
       pipelineName: 'DashboardPipeline',
       stages: [
         {
@@ -224,17 +199,20 @@ export class DashboardStack extends cdk.Stack {
             })
           ],
         },
-        {
-          stageName: 'Deploy',
-          actions: [
-            new codepipeline_actions.EcsDeployAction({
-              actionName: 'FargateDeploy',
-              service,
-              input: buildOutput,
-              deploymentTimeout: cdk.Duration.minutes(5),
-            })
-          ],
-        }
+      ],
+    });
+
+    // Add Deploy Stage
+    // Comment out this section when first time deploying the pipeline
+    pipeline.addStage({
+      stageName: 'Deploy',
+      actions: [
+        new codepipeline_actions.EcsDeployAction({
+          actionName: 'FargateDeploy',
+          service,
+          input: buildOutput,
+          deploymentTimeout: cdk.Duration.minutes(5),
+        })
       ],
     });
   }
