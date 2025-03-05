@@ -208,32 +208,13 @@ class DynamoDatabase {
 
   async getAllWebhooksByServerId(serverId: string): Promise<{ name: string, url: string, serverId: string }[]> {
     try {
-      // First get all regex patterns with their webhook references
-      const regexPatterns = await this.db.send(new QueryCommand({
-        TableName: this.regexTableName,
-        KeyConditionExpression: "serverId = :serverId",
+      const webhooksResponse = await this.db.send(new ScanCommand({
+        TableName: this.webhooksTableName,
+        FilterExpression: "serverId = :serverId",
         ExpressionAttributeValues: { ":serverId": serverId },
       }));
 
-      if (!regexPatterns.Items || regexPatterns.Items.length === 0) {
-        return [];
-      }
-
-      // Extract unique webhook names
-      const webhookNames = [...new Set(
-        regexPatterns.Items.map(item => item.webhookName)
-      )] as string[];
-
-      // Batch get webhook details
-      const webhooksResponse = await this.db.send(new BatchGetCommand({
-        RequestItems: {
-          [this.webhooksTableName]: {
-            Keys: webhookNames.map(name => ({ name }))
-          }
-        }
-      }));
-
-      return webhooksResponse.Responses?.[this.webhooksTableName] as { name: string, url: string, serverId: string }[] || [];
+      return (webhooksResponse.Items || []) as { name: string, url: string, serverId: string }[];
     } catch (error) {
       console.error(`Error fetching webhooks for server ${serverId}:`, error);
       throw error;

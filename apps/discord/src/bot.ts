@@ -27,7 +27,7 @@ client.on(Events.MessageCreate, (message: OmitPartialGroupDMChannel<Message<bool
 // Save a server when the bot is connected to it
 client.on(Events.GuildCreate, async (guild: Guild) => {
   try {
-    console.log('New server connected', guild);
+    console.log('New server connected', guild.id, guild.name);
     await database.createServer(guild.id, guild.name, 'disabled', guild.memberCount);
   } catch (error) {
     console.log(error);
@@ -41,6 +41,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       // Do the autocompletion here
       // const focusValue = interaction.options.getFocused(true);
       const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
+      console.log({ choices, serverId: interaction.guildId });
 
       await interaction.respond(
         choices.map(choice => ({ name: choice.name, value: choice.name }))
