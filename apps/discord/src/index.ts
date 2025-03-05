@@ -7,7 +7,6 @@ import { registerCommands } from "./commands";
 import { config } from "./config";
 // import { database } from "./database";
 
-
 // async function initializeDatabase() {
 //   try {
 //     await database.createTables();

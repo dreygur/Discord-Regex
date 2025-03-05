@@ -3,7 +3,8 @@ import { database } from "@/lib/database";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
-    const webhook = await database.getWebhook((await params).name);
+    const { name } = await params;
+    const webhook = await database.getWebhook(name);
     if (!webhook) {
       return NextResponse.json({ message: "Webhook not found" }, { status: 404 });
     }

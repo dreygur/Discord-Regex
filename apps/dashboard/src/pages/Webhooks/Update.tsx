@@ -15,7 +15,7 @@ export default function UpdateWebhook({ id }: { id: string }) {
 
   useEffect(() => {
     if (!id) return;
-    fetchWebhook();
+    fetchWebhook().then(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 

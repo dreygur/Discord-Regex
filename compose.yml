@@ -37,24 +37,24 @@ services:
         condition: service_healthy
     networks:
       - discord-network
-  # discord:
-  #   build:
-  #     context: .
-  #     dockerfile: apps/discord/Dockerfile
-  #     args:
-  #       TOKEN: OTU0NTEzOTg2NjI2Mzg3OTY5.G8Jg0d.IXIaAYKiYHNWXazkicS4d6XdpHpjj9zRJaom5E
-  #       THUMBNAIL: https://i.imgur.com/AfFp7pu.png
-  #       REGION: 'us-west-2'
-  #       ENDPOINT: http://dynamodb:8000
-  #       ACCESS_KEY_ID: jmj0pe
-  #       SECRET_ACCESS_KEY: jkq4o6
-  #   container_name: discord
-  #   restart: always
-  #   depends_on:
-  #     dynamodb:
-  #       condition: service_healthy
-  #   networks:
-  #     - discord-network
+  discord:
+    build:
+      context: .
+      dockerfile: apps/discord/Dockerfile
+      args:
+        TOKEN: OTU0NTEzOTg2NjI2Mzg3OTY5.G8Jg0d.IXIaAYKiYHNWXazkicS4d6XdpHpjj9zRJaom5E
+        THUMBNAIL: https://i.imgur.com/AfFp7pu.png
+        REGION: 'us-west-2'
+        ENDPOINT: http://dynamodb:8000
+        ACCESS_KEY_ID: jmj0pe
+        SECRET_ACCESS_KEY: jkq4o6
+    container_name: discord
+    restart: always
+    depends_on:
+      dynamodb:
+        condition: service_healthy
+    networks:
+      - discord-network
 
 networks:
   discord-network:
