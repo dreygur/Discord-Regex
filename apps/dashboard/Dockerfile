@@ -53,7 +53,6 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV HOSTNAME=0.0.0.0
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs
@@ -65,4 +64,4 @@ COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/standal
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/public ./apps/dashboard/public
 
-CMD node apps/dashboard/server.js
+CMD HOSTNAME=0.0.0.0 node apps/dashboard/server.js

@@ -28,17 +28,17 @@ if (region && endpoint && accessKeyId && secretAccessKey) {
 const database = new DynamoDatabase(config);
 
 // @ts-ignore
-if (!global.__tablesCreated) {
-  // @ts-ignore
-  global.__tablesCreated = true;
-  (async () => {
-    try {
-      await database.createTables();
-      console.log("All tables created successfully");
-    } catch (error) {
-      console.error("Error creating tables:", error);
-    }
-  })();
-}
+// if (!global.__tablesCreated) {
+//   // @ts-ignore
+//   global.__tablesCreated = true;
+//   (async () => {
+//     try {
+//       await database.createTables();
+//       console.log("All tables created successfully");
+//     } catch (error) {
+//       console.error("Error creating tables:", error);
+//     }
+//   })();
+// }
 
 export { database };
