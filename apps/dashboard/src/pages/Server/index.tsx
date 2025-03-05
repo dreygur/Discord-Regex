@@ -68,8 +68,8 @@ export default function Server() {
   // };
 
   const columns: ColumnDef<DiscordServer, unknown>[] = [
-    { accessorKey: "serverId", header: "Server ID" },
     { accessorKey: "name", header: "Server Name", cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
+    { accessorKey: "serverId", header: "Server ID" },
     { accessorKey: "email", header: "Server Owner Email" },
     { accessorKey: "totalUsers", header: "Users" },
     {
