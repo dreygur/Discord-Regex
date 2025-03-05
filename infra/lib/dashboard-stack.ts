@@ -24,28 +24,24 @@ export class DashboardStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: DashboardStackProps) {
     super(scope, id, props);
 
-    // 1. Reference DynamoDB Tables from props
+    // Reference DynamoDB Tables from props
     const { webhooksTable, regexTable, serversTable, cluster } = props;
 
-    // 2. Create ECR Repository for Docker images
+    // Create ECR Repository for Docker images
     const ecrRepo = new ecr.Repository(this, 'DashboardEcrRepo', {
       repositoryName: 'dashboard',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // 3. Create ECS Cluster
-    // const vpc = new ec2.Vpc(this, 'DashboardVpc', { maxAzs: 2 });
-    // const cluster = new ecs.Cluster(this, 'DashboardCluster', { vpc });
-
-    // 4. Create Task Definition with placeholder image
+    // Create Task Definition with placeholder image
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'DashboardTaskDef');
 
-    // 6. Grant permissions to access DynamoDB tables
+    // Grant permissions to access DynamoDB tables
     webhooksTable.grantReadWriteData(taskDefinition.taskRole);
     regexTable.grantReadWriteData(taskDefinition.taskRole);
     serversTable.grantReadWriteData(taskDefinition.taskRole);
 
-    // 5. Create Fargate Service
+    // Create Fargate Service
     const service = new ecs.FargateService(this, 'DashboardService', {
       cluster,
       taskDefinition,
@@ -71,7 +67,7 @@ export class DashboardStack extends cdk.Stack {
       essential: true,
     });
 
-    // 7. Create CodeStar Connection for GitHub
+    // Create CodeStar Connection for GitHub
     const sourceOutput = new codepipeline.Artifact('SourceArtifact');
     const githubConnection = new codepipeline_actions.GitHubSourceAction({
       actionName: 'GitHub_Source',
@@ -144,7 +140,7 @@ export class DashboardStack extends cdk.Stack {
       'dashboard'
     ).grantRead(buildProject);
 
-    // 8. Create Pipeline
+    // Create Pipeline
     const pipeline = new codepipeline.Pipeline(this, 'DashboardPipeline', {
       pipelineName: 'DashboardPipeline',
       stages: [
@@ -163,17 +159,17 @@ export class DashboardStack extends cdk.Stack {
             })
           ],
         },
-        // {
-        //   stageName: 'Deploy',
-        //   actions: [
-        //     new codepipeline_actions.EcsDeployAction({
-        //       actionName: 'FargateDeploy',
-        //       service,
-        //       input: buildOutput,
-        //       deploymentTimeout: cdk.Duration.minutes(5),
-        //     })
-        //   ],
-        // }
+        {
+          stageName: 'Deploy',
+          actions: [
+            new codepipeline_actions.EcsDeployAction({
+              actionName: 'FargateDeploy',
+              service,
+              input: buildOutput,
+              deploymentTimeout: cdk.Duration.minutes(5),
+            })
+          ],
+        }
       ],
     });
   }

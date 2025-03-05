@@ -17,6 +17,9 @@ ENV NEXT_ENDPOINT=$NEXT_ENDPOINT
 ENV NEXT_ACCESS_KEY_ID=$NEXT_ACCESS_KEY_ID
 ENV NEXT_SECRET_ACCESS_KEY=$NEXT_SECRET_ACCESS_KEY
 
+# Set the hostname to 0.0.0.0
+ENV HOSTNAME 0.0.0.0
+
 FROM base AS builder
 RUN apk update
 RUN apk add --no-cache libc6-compat
@@ -62,4 +65,4 @@ COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/standal
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/public ./apps/dashboard/public
 
-CMD node apps/dashboard/server.js -H 0.0.0.0
+CMD node apps/dashboard/server.js

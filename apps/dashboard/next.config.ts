@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Enables the standalone output for Docker optimization
+  // serverRuntimeConfig: {
+  //   hostname: '0.0.0.0',
+  //   port: 3000,
+  // },
   env: {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_REGION: process.env.NEXT_REGION,
