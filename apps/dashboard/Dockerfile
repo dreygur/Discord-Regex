@@ -62,4 +62,4 @@ COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/standal
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 COPY --from=installer --chown=dashboard:nodejs /app/apps/dashboard/public ./apps/dashboard/public
 
-CMD node apps/dashboard/server.js
+CMD node apps/dashboard/server.js -H 0.0.0.0
