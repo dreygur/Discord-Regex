@@ -32,7 +32,7 @@ export default function Server() {
       const response = await fetch(`/api/server/${serverId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ updates: { status: newStatus } })
+        body: JSON.stringify({ status: newStatus })
       });
 
       if (!response.ok) {

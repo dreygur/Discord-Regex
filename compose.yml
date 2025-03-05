@@ -28,6 +28,9 @@ services:
         NEXT_SECRET_ACCESS_KEY: jkq4o6
         NEXT_HASHED_PASSWORD: ce8ef0001ea4b12a435851381d2a1e5b616061cc74d1f804fd490a6805e36c16
         NEXT_VALID_EMAIL: wesley@mail.com
+        CACHE_TTL: 10000
+        DEFAULT_RETRIES: 3
+        DEFAULT_DELAY: 1000
     container_name: dashboard
     restart: always
     ports:

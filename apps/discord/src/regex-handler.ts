@@ -25,7 +25,7 @@ interface IServer {
 export const queue = new FetchQueue();
 
 // Cache
-export const cache = new Cache<any>({ defaultTtl: 10000 });
+export const cache = new Cache<any>({ defaultTtl: parseInt(process.env.CACHE_TTL as string) || 10000 });
 
 // Cache All the webhooks
 export async function regexHandler(message: OmitPartialGroupDMChannel<Message<boolean>>) {
@@ -40,7 +40,7 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
   }
 
   if (!webhooks) {
-    webhooks = await database.getAllWebhooks();
+    webhooks = await database.getAllWebhooksByServerId(message.guildId as string);
     cache.set('webhooks', webhooks);
   }
 
@@ -59,6 +59,7 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
     if (!(new RegExp(pattern.regexPattern).test(message.content)) || !webhooks) return;
     const webhook = webhooks.find(w => w.name === pattern.webhookName);
     if (webhook) {
+      console.log('Sending message to webhook:', webhook.url);
       queue.add(new URL(webhook.url), {
         method: 'POST',
         body: JSON.stringify({ content: message.content }),
@@ -68,8 +69,7 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
           console.log('POST successful:', response.status);
           return response.json();
         })
-        .then(console.log)
-        .catch(console.error)
+        .catch(console.log)
     }
   });
 }

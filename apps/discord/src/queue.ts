@@ -1,5 +1,9 @@
 import { QueueTask } from "./types";
 
+// Default values
+const DEFAULT_RETRIES = parseInt(process.env.DEFAULT_RETRIES as string) || 3;
+const DEFAULT_DELAY = parseInt(process.env.DEFAULT_DELAY as string) || 1000;
+
 class FetchQueue {
   private queue: QueueTask[];
   private processing: boolean;
@@ -12,8 +16,8 @@ class FetchQueue {
   public add(
     url: URL,
     init: RequestInit = {},
-    retries: number = 3,
-    delay: number = 1000
+    retries: number = DEFAULT_RETRIES,
+    delay: number = DEFAULT_DELAY
   ): Promise<Response> {
     return new Promise((resolve, reject) => {
       this.queue.push({

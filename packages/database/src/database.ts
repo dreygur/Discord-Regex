@@ -247,12 +247,18 @@ class DynamoDatabase {
   }
 
   async getRegexesByServer(serverId: string): Promise<{ serverId: string; regexPattern: string; webhookName: string }[]> {
-    const result = await this.db.send(new QueryCommand({
-      TableName: this.regexTableName,
-      KeyConditionExpression: "serverId = :serverId",
-      ExpressionAttributeValues: { ":serverId": serverId },
-    }));
-    return result.Items as { serverId: string; regexPattern: string; webhookName: string }[] || [];
+    try {
+      const result = await this.db.send(new ScanCommand({
+        TableName: this.regexTableName,
+        FilterExpression: "serverId = :serverId",
+        ExpressionAttributeValues: { ":serverId": serverId },
+      }));
+
+      return result.Items as { serverId: string; regexPattern: string; webhookName: string }[] || [];
+    } catch (error) {
+      console.error(`Error fetching regexes for server ${serverId}:`, error);
+      throw error;
+    }
   }
 
   async updateRegexWebhook(serverId: string, regexPattern: string, newWebhookName: string): Promise<void> {
