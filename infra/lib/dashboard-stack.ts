@@ -129,7 +129,7 @@ export class DashboardStack extends cdk.Stack {
               'APP_ENV_CONTENT=$(aws ssm get-parameter --name "dashboard" --with-decryption --query "Parameter.Value" --output text)',
               'echo "APP_ENV_CONTENT: $APP_ENV_CONTENT"',
 
-              "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -E 's/^([^=]+)=(.*)$/--build-arg \"\\1=\\2\"/')",
+              "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
               'echo "env: $BUILD_ARGS"',
 
               'docker build -t $ECR_REPO_URI:latest -f apps/dashboard/Dockerfile . $BUILD_ARGS',
