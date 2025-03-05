@@ -9,6 +9,7 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 // Define interface for props including DynamoDB tables
@@ -54,6 +55,16 @@ export class DashboardStack extends cdk.Stack {
     regexTable.grantReadWriteData(taskDefinition.taskRole);
     serversTable.grantReadWriteData(taskDefinition.taskRole);
 
+    // Attach policy to allow DescribeTable
+    taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: ['dynamodb:DescribeTable'],
+      resources: [
+        webhooksTable.tableArn,
+        regexTable.tableArn,
+        serversTable.tableArn,
+      ],
+    }));
+
     // Create Fargate Service
     const service = new ecs.FargateService(this, 'DashboardService', {
       cluster,
@@ -70,21 +81,6 @@ export class DashboardStack extends cdk.Stack {
 
     // Attach Security Group to Fargate Service
     service.connections.addSecurityGroup(securityGroup);
-
-    // Attach Target Group to Service
-    const targetGroup = listener.addTargets('DashboardTarget', {
-      port: 3000,
-      targets: [service],
-      healthCheck: {
-        path: '/',
-        interval: cdk.Duration.seconds(30),
-      },
-    });
-
-    // Output Load Balancer URL
-    new cdk.CfnOutput(this, 'ALBURL', {
-      value: loadBalancer.loadBalancerDnsName,
-    });
 
     // Add container definition - this is essential
     const container = taskDefinition.addContainer('DashboardContainer', {
@@ -179,8 +175,24 @@ export class DashboardStack extends cdk.Stack {
       'dashboard'
     ).grantRead(buildProject);
 
+    // Attach Target Group to Service
+    listener.addTargets('DashboardTarget', {
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      port: 3000,
+      targets: [service],
+      healthCheck: {
+        path: '/',
+        interval: cdk.Duration.seconds(30),
+      },
+    });
+
+    // Output Load Balancer URL
+    new cdk.CfnOutput(this, 'ALBURL', {
+      value: loadBalancer.loadBalancerDnsName,
+    });
+
     // Create Pipeline
-    const pipeline = new codepipeline.Pipeline(this, 'DashboardPipeline', {
+    new codepipeline.Pipeline(this, 'DashboardPipeline', {
       pipelineName: 'DashboardPipeline',
       stages: [
         {

@@ -8,6 +8,7 @@ import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 // Define interface for props including DynamoDB tables
@@ -41,8 +42,18 @@ export class DiscordBotStack extends cdk.Stack {
     regexTable.grantReadWriteData(taskDefinition.taskRole);
     serversTable.grantReadWriteData(taskDefinition.taskRole);
 
+    // Attach policy to allow DescribeTable
+    taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: ['dynamodb:DescribeTable'],
+      resources: [
+        webhooksTable.tableArn,
+        regexTable.tableArn,
+        serversTable.tableArn,
+      ],
+    }));
+
     // Add container definition - this is essential
-    const container = taskDefinition.addContainer('BotContainer', {
+    taskDefinition.addContainer('BotContainer', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepo),
       healthCheck: {
         command: [
@@ -136,7 +147,7 @@ export class DiscordBotStack extends cdk.Stack {
     ).grantRead(buildProject);
 
     // Create Pipeline
-    const pipeline = new codepipeline.Pipeline(this, 'BotPipeline', {
+    new codepipeline.Pipeline(this, 'BotPipeline', {
       pipelineName: 'DiscordBotPipeline',
       stages: [
         {

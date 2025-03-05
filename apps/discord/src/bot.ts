@@ -20,16 +20,17 @@ client.on(Events.MessageCreate, (message: OmitPartialGroupDMChannel<Message<bool
   try {
     regexHandler(message);
   } catch (error) {
-    console.error(error);
+    console.log(error);
   }
 });
 
 // Save a server when the bot is connected to it
 client.on(Events.GuildCreate, async (guild: Guild) => {
   try {
-    await database.createServer(guild.id, guild.name, 'active', guild.memberCount);
+    console.log('New server connected', guild);
+    await database.createServer(guild.id, guild.name, 'disabled', guild.memberCount);
   } catch (error) {
-    console.error(error);
+    console.log(error);
   }
 });
 
