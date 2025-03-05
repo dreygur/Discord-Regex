@@ -163,17 +163,17 @@ export class DashboardStack extends cdk.Stack {
             })
           ],
         },
-        {
-          stageName: 'Deploy',
-          actions: [
-            new codepipeline_actions.EcsDeployAction({
-              actionName: 'FargateDeploy',
-              service,
-              input: buildOutput,
-              deploymentTimeout: cdk.Duration.minutes(5),
-            })
-          ],
-        }
+        // {
+        //   stageName: 'Deploy',
+        //   actions: [
+        //     new codepipeline_actions.EcsDeployAction({
+        //       actionName: 'FargateDeploy',
+        //       service,
+        //       input: buildOutput,
+        //       deploymentTimeout: cdk.Duration.minutes(5),
+        //     })
+        //   ],
+        // }
       ],
     });
   }
