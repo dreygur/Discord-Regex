@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
-const storedHashedPassword = process.env.NEXT_PASSWORD || "";
+const storedHashedPassword = process.env.NEXT_HASHED_PASSWORD || "";
 const validEmail = process.env.NEXT_VALID_EMAIL || "";
 
 function compareHashes(hashA: string, hashB: string): boolean {
