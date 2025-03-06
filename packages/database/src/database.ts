@@ -4,6 +4,7 @@ import {
   DescribeTableCommand,
   ResourceInUseException,
   ResourceNotFoundException,
+  DeleteTableCommand,
 } from "@aws-sdk/client-dynamodb";
 import {
   BatchGetCommand,
@@ -90,9 +91,11 @@ class DynamoDatabase {
       TableName: this.regexTableName,
       AttributeDefinitions: [
         { AttributeName: "serverId", AttributeType: "S" },
+        { AttributeName: "regexPattern", AttributeType: "S" },
       ],
       KeySchema: [
         { AttributeName: "serverId", KeyType: "HASH" },
+        { AttributeName: "regexPattern", KeyType: "RANGE" },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -248,9 +251,10 @@ class DynamoDatabase {
 
   async getRegexesByServer(serverId: string): Promise<{ serverId: string; regexPattern: string; webhookName: string }[]> {
     try {
-      const result = await this.db.send(new ScanCommand({
+      // With the composite key, we can use a more efficient query operation
+      const result = await this.db.send(new QueryCommand({
         TableName: this.regexTableName,
-        FilterExpression: "serverId = :serverId",
+        KeyConditionExpression: "serverId = :serverId",
         ExpressionAttributeValues: { ":serverId": serverId },
       }));
 
@@ -262,19 +266,49 @@ class DynamoDatabase {
   }
 
   async updateRegexWebhook(serverId: string, regexPattern: string, newWebhookName: string): Promise<void> {
-    await this.db.send(new UpdateCommand({
-      TableName: this.regexTableName,
-      Key: { serverId, regexPattern },
-      UpdateExpression: "SET webhookName = :whn",
-      ExpressionAttributeValues: { ":whn": newWebhookName },
-    }));
+    try {
+      // With the composite key, we can directly update the specific regex pattern
+      await this.db.send(new UpdateCommand({
+        TableName: this.regexTableName,
+        Key: { serverId, regexPattern },
+        UpdateExpression: "SET webhookName = :whn",
+        ExpressionAttributeValues: { ":whn": newWebhookName },
+      }));
+
+      console.log(`Successfully updated webhook name for regex pattern "${regexPattern}" to "${newWebhookName}"`);
+    } catch (error) {
+      console.error(`Error updating webhook name for regex pattern "${regexPattern}":`, error);
+      throw error;
+    }
   }
 
   async deleteRegex(serverId: string, regexPattern: string): Promise<void> {
-    await this.db.send(new DeleteCommand({
-      TableName: this.regexTableName,
-      Key: { serverId, regexPattern },
-    }));
+    try {
+      // With the composite key, we can directly delete the specific regex pattern
+      await this.db.send(new DeleteCommand({
+        TableName: this.regexTableName,
+        Key: { serverId, regexPattern }
+      }));
+
+      console.log(`Successfully deleted regex pattern "${regexPattern}" for server ${serverId}`);
+    } catch (error) {
+      console.error(`Error deleting regex pattern "${regexPattern}" for server ${serverId}:`, error);
+      throw error;
+    }
+  }
+
+  async getRegex(serverId: string, regexPattern: string): Promise<{ serverId: string; regexPattern: string; webhookName: string } | null> {
+    try {
+      const result = await this.db.send(new GetCommand({
+        TableName: this.regexTableName,
+        Key: { serverId, regexPattern }
+      }));
+
+      return result.Item as { serverId: string; regexPattern: string; webhookName: string } || null;
+    } catch (error) {
+      console.error(`Error fetching regex pattern "${regexPattern}" for server ${serverId}:`, error);
+      throw error;
+    }
   }
 
   // Discord Servers Table Methods

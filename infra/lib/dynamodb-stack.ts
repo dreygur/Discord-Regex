@@ -24,6 +24,7 @@ export class DynamoDBStack extends cdk.Stack {
     // Create Regex Patterns table
     this.regexTable = new dynamodb.Table(this, 'RegexTable', {
       partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'regexPattern', type: dynamodb.AttributeType.STRING },
       tableName: 'RegexPatterns',
       removalPolicy: RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,

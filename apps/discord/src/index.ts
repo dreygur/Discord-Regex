@@ -5,17 +5,17 @@ import { Client, Events } from "discord.js";
 import { client } from "./bot";
 import { registerCommands } from "./commands";
 import { config } from "./config";
-// import { database } from "./database";
+import { database } from "./database";
 
-// async function initializeDatabase() {
-//   try {
-//     await database.createTables();
+async function initializeDatabase() {
+  try {
+    await database.createTables();
 
-//     console.log("All tables created successfully");
-//   } catch (error) {
-//     console.error("Error creating tables:", error);
-//   }
-// }
+    console.log("All tables created successfully");
+  } catch (error) {
+    console.error("Error creating tables:", error);
+  }
+}
 
 function start() {
   // When the client is ready show som logs
@@ -27,7 +27,7 @@ function start() {
   client
     .login(config.token as string)
     .then(async () => {
-      // await initializeDatabase();
+      await initializeDatabase();
       await registerCommands(client);
     })
     .catch(console.error);
