@@ -1,55 +1,33 @@
 import { Message, OmitPartialGroupDMChannel } from "discord.js";
-import { FetchQueue } from './queue';
+import { queue } from './queue';
 import { database } from "./database";
-import { Cache } from "./cache";
-
-interface IRegexGuild {
-  serverId: string;
-  regexPattern: string;
-  webhookName: string
-};
-
-interface IWebhook {
-  name: string;
-  url: string
-};
-
-interface IServer {
-  serverId: string;
-  name: string;
-  status: "active" | "disabled";
-  totalUsers: number;
-}
-
-// The fetch Queue
-export const queue = new FetchQueue();
-
-// Cache
-export const cache = new Cache<any>({ defaultTtl: parseInt(process.env.CACHE_TTL as string) || 10000 });
+import { cache } from "./cache";
+import type { IRegexGuild, IServer, IWebhook } from "./types";
 
 // Cache All the webhooks
 export async function regexHandler(message: OmitPartialGroupDMChannel<Message<boolean>>) {
   if (message.content.length === 0) return;
 
-  var patterns: IRegexGuild[] | undefined = cache.get(message.guildId as string);
-  var webhooks: IWebhook[] | undefined = cache.get('webhooks');
-  var servers: IServer | undefined = cache.get(`${message.guildId}_server`);
+  const guildCacheKey: string = message.guildId as string;
+  const guildCache = cache.get(guildCacheKey);
+
+  let patterns: IRegexGuild[] | undefined = guildCache?.patterns;
+  let webhooks: IWebhook[] | undefined = guildCache?.webhooks;
+  let servers: IServer | undefined = guildCache?.servers;
+
   if (!patterns) {
     patterns = await database.getRegexesByServer(message.guildId as string);
-    cache.set(message.guildId as string, patterns);
+    cache.set(guildCacheKey, { patterns });
   }
 
   if (!webhooks) {
     webhooks = await database.getAllWebhooksByServerId(message.guildId as string);
-    cache.set('webhooks', webhooks);
+    cache.set(guildCacheKey, { webhooks });
   }
 
   if (!servers) {
-    const server = await database.getServer(message.guildId as string);
-    if (server) {
-      cache.set(`${message.guildId}_server`, server);
-      servers = server;
-    }
+    servers = (await database.getServer(message.guildId as string)) as IServer;
+    cache.set(guildCacheKey, { servers });
   }
 
   if (!patterns || !servers || servers.status === 'disabled') return;

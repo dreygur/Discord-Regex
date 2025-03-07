@@ -22,3 +22,22 @@ export interface CacheEntry<T> {
 export type CacheOptions = {
   defaultTtl?: number | null;
 };
+
+export interface IRegexGuild {
+  serverId: string;
+  regexPattern: string;
+  webhookName: string
+};
+
+export interface IWebhook {
+  name: string;
+  url: string
+};
+
+export interface IServer {
+  serverId: string;
+  name: string;
+  status: "active" | "disabled";
+  totalUsers: number;
+  email?: string;
+}

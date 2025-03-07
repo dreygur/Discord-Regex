@@ -84,4 +84,7 @@ class Cache<T> {
   }
 }
 
-export { Cache };
+// Cache
+const cache = new Cache<any>({ defaultTtl: parseInt(process.env.CACHE_TTL as string) || 10000 * 6 });
+
+export { Cache, cache };

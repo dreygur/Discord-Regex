@@ -2,6 +2,8 @@ import { Client, Events, GatewayIntentBits, Guild, Interaction, Message, Message
 import { commands } from './commands';
 import { regexHandler } from './regex-handler';
 import { database } from './database';
+import { cache } from './cache';
+import { IWebhook } from './types';
 
 // Discord Bot client
 export const client: Client = new Client({
@@ -40,7 +42,12 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
     try {
       // Do the autocompletion here
       // const focusValue = interaction.options.getFocused(true);
-      const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
+      // const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
+      let choices: IWebhook[] | undefined = cache.get(interaction.guildId as string)?.webhooks;
+      if (!choices) {
+        choices = await database.getAllWebhooksByServerId(interaction.guildId as string);
+        cache.set(interaction.guildId as string, { webhooks: choices });
+      }
       console.log({ choices, serverId: interaction.guildId });
 
       await interaction.respond(

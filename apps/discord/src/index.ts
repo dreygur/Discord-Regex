@@ -27,7 +27,7 @@ function start() {
   client
     .login(config.token as string)
     .then(async () => {
-      await initializeDatabase();
+      // await initializeDatabase();
       await registerCommands(client);
     })
     .catch(console.error);

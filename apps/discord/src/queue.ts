@@ -61,4 +61,7 @@ class FetchQueue {
   }
 }
 
-export { FetchQueue };
+// The fetch Queue
+const queue = new FetchQueue();
+
+export { FetchQueue, queue };

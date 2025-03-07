@@ -10,8 +10,7 @@ const command: BotCommand = {
     .setDescription("Lists webhooks"),
   execute: async (interaction: CommandInteraction) => {
     try {
-      // const webhooks = await database.getAllWebhooksByServerId(interaction.guildId as string);
-      const webhooks = await database.getAllWebhooks();
+      const webhooks = await database.getAllWebhooksByServerId(interaction.guildId as string);
       if (webhooks.length === 0) {
         await interaction.reply("No webhooks found.");
         return;

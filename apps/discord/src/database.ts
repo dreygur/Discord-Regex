@@ -15,7 +15,8 @@ let config: IDBClientOptions = {
 if (region && endpoint && accessKeyId && secretAccessKey) {
   config = {
     ...config,
-    region, endpoint,
+    region,
+    // endpoint,
     credentials: {
       accessKeyId, secretAccessKey
     },
