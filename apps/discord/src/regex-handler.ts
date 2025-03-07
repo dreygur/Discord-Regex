@@ -45,7 +45,7 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
       })
         .then(response => {
           console.log('POST successful:', response.status);
-          return response.json();
+          return response.status;
         })
         .catch(console.log)
     }

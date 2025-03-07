@@ -16,7 +16,7 @@ if (region && endpoint && accessKeyId && secretAccessKey) {
   config = {
     ...config,
     region,
-    // endpoint,
+    endpoint,
     credentials: {
       accessKeyId, secretAccessKey
     },
