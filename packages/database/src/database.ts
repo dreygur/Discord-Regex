@@ -249,6 +249,27 @@ class DynamoDatabase {
     }));
   }
 
+  async getAllRegex(): Promise<{
+    serverId: string;
+    webhookName: string;
+    regexPattern: string;
+  }[]> {
+    try {
+      const result = await this.db.send(new ScanCommand({
+        TableName: this.regexTableName,
+      }));
+
+      return result.Items as {
+        serverId: string;
+        webhookName: string;
+        regexPattern: string;
+      }[];
+    } catch (error) {
+      console.error("Error fetching regex:", error);
+      throw error;
+    }
+  }
+
   async getRegexesByServer(serverId: string): Promise<{ serverId: string; regexPattern: string; webhookName: string }[]> {
     try {
       // With the composite key, we can use a more efficient query operation
@@ -280,6 +301,34 @@ class DynamoDatabase {
       console.error(`Error updating webhook name for regex pattern "${regexPattern}":`, error);
       throw error;
     }
+  }
+
+  async updateRegex(
+    serverId: string,
+    pattern: string,
+    updates: {
+      webhookName?: string;
+    }
+  ): Promise<void> {
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, any> = {};
+
+    Object.entries(updates).forEach(([key, value], index) => {
+      updateExpressions.push(`#${key} = :val${index}`);
+      expressionAttributeNames[`#${key}`] = key;
+      expressionAttributeValues[`:val${index}`] = value;
+    });
+
+    if (updateExpressions.length === 0) return;
+
+    await this.db.send(new UpdateCommand({
+      TableName: this.regexTableName,
+      Key: { serverId, regexPattern: pattern },
+      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+    }));
   }
 
   async deleteRegex(serverId: string, regexPattern: string): Promise<void> {

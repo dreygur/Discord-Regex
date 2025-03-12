@@ -30,6 +30,9 @@ export default function Navbar() {
             <DropdownMenuItem asChild>
               <Link href="/webhooks">Webhooks</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/regex">RegEx</Link>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -48,6 +51,13 @@ export default function Navbar() {
               } transition-all duration-300`}
           >
             Webhooks
+          </Link>
+          <Link
+            href="/regex"
+            className={`text-md font-medium uppercase hover:text-primary ${pathname?.includes("/regex") ? "text-primary font-semibold" : "text-primary/50"
+              } transition-all duration-300`}
+          >
+            RegEx
           </Link>
         </div>
       </div>
