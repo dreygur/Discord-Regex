@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string; pattern: string }> }) {
   try {
     const { id, pattern } = await params;
-    await database.deleteRegex(id, pattern);
+    await database.deleteRegex(id, decodeURIComponent(pattern));
     return NextResponse.json({ message: "Regex deleted successfully" });
   } catch (error) {
     console.error("Error deleting regex:", error);

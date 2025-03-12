@@ -71,17 +71,17 @@ export default function UpdateRegex({ id, pattern }: { id: string; pattern: stri
       <form onSubmit={handleUpdate} className="space-y-4">
         <div className="flex flex-col gap-2">
           <Label>Server ID</Label>
-          <Input value={regex.serverId} onChange={e => setRegex({ ...regex, serverId: e.target.value })} disabled />
+          <Input value={regex.serverId} onChange={e => setRegex({ ...regex, serverId: e.target.value.trim() })} disabled />
         </div>
 
         <div className="flex flex-col gap-2">
           <Label>Regex Pattern</Label>
-          <Input value={regex.regexPattern} onChange={e => setRegex({ ...regex, regexPattern: e.target.value })} disabled />
+          <Input value={regex.regexPattern} onChange={e => setRegex({ ...regex, regexPattern: e.target.value.trim() })} disabled />
         </div>
 
         <div className="flex flex-col gap-2">
           <Label>Webhook</Label>
-          <Input value={regex.webhookName} onChange={e => setRegex({ ...regex, webhookName: e.target.value })} />
+          <Input value={regex.webhookName} onChange={e => setRegex({ ...regex, webhookName: e.target.value.trim() })} required />
         </div>
 
         <Button type="submit" disabled={loading}>

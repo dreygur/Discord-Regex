@@ -74,11 +74,11 @@ export default function UpdateServer({ id }: { id: string }) {
         </div>
         <div className="flex flex-col gap-2">
           <Label>Server Name</Label>
-          <Input value={server.name} onChange={e => setServer({ ...server, name: e.target.value })} disabled />
+          <Input value={server.name} onChange={e => setServer({ ...server, name: e.target.value.trim() })} disabled />
         </div>
         <div className="flex flex-col gap-2">
           <Label>Server Owner Email</Label>
-          <Input type="text" value={server.email || ""} onChange={e => setServer({ ...server, email: e.target.value })} />
+          <Input type="text" value={server.email || ""} onChange={e => setServer({ ...server, email: e.target.value.trim() })} />
         </div>
         <div className="flex flex-col gap-2">
           <Label>Status</Label>
@@ -94,7 +94,7 @@ export default function UpdateServer({ id }: { id: string }) {
         </div>
         <div className="flex flex-col gap-2">
           <Label>Total Users</Label>
-          <Input type="number" value={server.totalUsers} onChange={e => setServer({ ...server, totalUsers: Number(e.target.value) })} disabled />
+          <Input type="number" value={server.totalUsers} onChange={e => setServer({ ...server, totalUsers: Number(e.target.value.trim()) })} disabled />
         </div>
         <Button type="submit" disabled={loading}>
           {loading ? "Updating..." : "Update Server"}

@@ -66,16 +66,16 @@ export default function UpdateWebhook({ id }: { id: string }) {
       <form onSubmit={handleUpdate} className="space-y-4">
         <div className="flex flex-col gap-2">
           <Label>Name</Label>
-          <Input value={webhook.name} onChange={e => setWebhook({ ...webhook, name: e.target.value })} disabled />
+          <Input value={webhook.name} onChange={e => setWebhook({ ...webhook, name: e.target.value.trim() })} disabled />
         </div>
         <div className="flex flex-col gap-2">
           <Label>URL</Label>
-          <Input type="url" value={webhook.url} onChange={e => setWebhook({ ...webhook, url: e.target.value })} required />
+          <Input type="url" value={webhook.url} onChange={e => setWebhook({ ...webhook, url: e.target.value.trim() })} required />
         </div>
 
         <div className="flex flex-col gap-2">
           <Label>Server ID</Label>
-          <Input type="text" value={webhook.serverId} onChange={e => setWebhook({ ...webhook, serverId: e.target.value })} required />
+          <Input type="text" value={webhook.serverId} onChange={e => setWebhook({ ...webhook, serverId: e.target.value.trim() })} required />
         </div>
 
         <Button type="submit" disabled={loading}>

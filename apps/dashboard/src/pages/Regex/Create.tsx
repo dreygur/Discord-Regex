@@ -41,17 +41,17 @@ export default function CreateRegex() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col gap-2">
           <Label>Server ID</Label>
-          <Input type="text" value={serverId} onChange={e => setServerId(e.target.value)} required />
+          <Input type="text" value={serverId} onChange={e => setServerId(e.target.value.trim())} required />
         </div>
 
         <div className="flex flex-col gap-2">
           <Label>Regex Pattern</Label>
-          <Input type="text" value={regexPattern} onChange={e => setRegexPattern(e.target.value)} required />
+          <Input type="text" value={regexPattern} onChange={e => setRegexPattern(e.target.value.trim())} required />
         </div>
 
         <div className="flex flex-col gap-2">
           <Label>Webhook</Label>
-          <Input type="text" value={webhookName} onChange={e => setWebhookName(e.target.value)} required />
+          <Input type="text" value={webhookName} onChange={e => setWebhookName(e.target.value.trim())} required />
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>

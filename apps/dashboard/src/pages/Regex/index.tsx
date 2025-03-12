@@ -27,7 +27,7 @@ export default function Regex() {
         method: "DELETE"
       });
       if (res.ok) {
-        setRegexes(regexes.filter(w => (w.serverId === selectedRegex.serverId) && (w.regexPattern === selectedRegex.regexPattern)));
+        getRegexes();
         setShowDeleteModal(false);
       } else {
         toast.error("Failed to delete regex", { id: "regex" });
@@ -78,7 +78,7 @@ export default function Regex() {
     }
   ];
 
-  useEffect(() => {
+  const getRegexes = () => {
     fetch(`/api/regex`, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
@@ -86,6 +86,9 @@ export default function Regex() {
       .then(res => res.json())
       .then(setRegexes)
       .catch(console.error);
+  }
+  useEffect(() => {
+    getRegexes();
   }, []);
 
   return (

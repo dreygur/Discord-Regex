@@ -44,11 +44,11 @@ export default function CreateServer() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label>Server ID</Label>
-          <Input value={serverId} onChange={e => setServerId(e.target.value)} required />
+          <Input value={serverId} onChange={e => setServerId(e.target.value.trim())} required />
         </div>
         <div>
           <Label>Server Name</Label>
-          <Input value={name} onChange={e => setName(e.target.value)} required />
+          <Input value={name} onChange={e => setName(e.target.value.trim())} required />
         </div>
         <div>
           <Label>Status</Label>
@@ -64,7 +64,7 @@ export default function CreateServer() {
         </div>
         <div>
           <Label>Total Users</Label>
-          <Input type="number" value={totalUsers} onChange={e => setTotalUsers(Number(e.target.value))} />
+          <Input type="number" value={totalUsers} onChange={e => setTotalUsers(Number(e.target.value.trim()))} />
         </div>
         <Button type="submit" disabled={loading}>
           {loading ? "Creating..." : "Create Server"}
