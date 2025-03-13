@@ -4,10 +4,8 @@ import {
   DescribeTableCommand,
   ResourceInUseException,
   ResourceNotFoundException,
-  DeleteTableCommand,
 } from "@aws-sdk/client-dynamodb";
 import {
-  BatchGetCommand,
   DeleteCommand,
   DynamoDBDocumentClient,
   GetCommand,
@@ -18,6 +16,7 @@ import {
   UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
 import { IDBClientOptions } from "./types";
+import { v4 as uuidv4 } from 'uuid';
 
 class DynamoDatabase {
   private client: DynamoDBClient;
@@ -67,10 +66,26 @@ class DynamoDatabase {
     const command = new CreateTableCommand({
       TableName: this.webhooksTableName,
       KeySchema: [
-        { AttributeName: "name", KeyType: "HASH" },
+        { AttributeName: "id", KeyType: "HASH" },
       ],
       AttributeDefinitions: [
-        { AttributeName: "name", AttributeType: "S" },
+        { AttributeName: "id", AttributeType: "S" },
+        { AttributeName: "webhookName", AttributeType: "S" },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "NameIndex",
+          KeySchema: [
+            { AttributeName: "webhookName", KeyType: "HASH" },
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          },
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5,
+          },
+        },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -90,12 +105,28 @@ class DynamoDatabase {
     const command = new CreateTableCommand({
       TableName: this.regexTableName,
       AttributeDefinitions: [
+        { AttributeName: "id", AttributeType: "S" },
         { AttributeName: "serverId", AttributeType: "S" },
         { AttributeName: "regexPattern", AttributeType: "S" },
       ],
       KeySchema: [
-        { AttributeName: "serverId", KeyType: "HASH" },
-        { AttributeName: "regexPattern", KeyType: "RANGE" },
+        { AttributeName: "id", KeyType: "HASH" },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "ServerRegexIndex",
+          KeySchema: [
+            { AttributeName: "serverId", KeyType: "HASH" },
+            { AttributeName: "regexPattern", KeyType: "RANGE" },
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          },
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5,
+          },
+        },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -115,10 +146,26 @@ class DynamoDatabase {
     const command = new CreateTableCommand({
       TableName: this.serversTableName,
       KeySchema: [
-        { AttributeName: "serverId", KeyType: "HASH" },
+        { AttributeName: "id", KeyType: "HASH" },
       ],
       AttributeDefinitions: [
+        { AttributeName: "id", AttributeType: "S" },
         { AttributeName: "serverId", AttributeType: "S" },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: "ServerIdIndex",
+          KeySchema: [
+            { AttributeName: "serverId", KeyType: "HASH" },
+          ],
+          Projection: {
+            ProjectionType: "ALL"
+          },
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5,
+          },
+        },
       ],
       ProvisionedThroughput: {
         ReadCapacityUnits: 5,
@@ -159,29 +206,48 @@ class DynamoDatabase {
   }
 
   // Webhooks Table Methods
-  async createWebhook(name: string, url: string, serverId: string): Promise<void> {
+  async createWebhook(webhookName: string, url: string, serverId: string): Promise<string> {
+    const id = uuidv4();
     await this.db.send(new PutCommand({
       TableName: this.webhooksTableName,
-      Item: { name, url, serverId },
+      Item: { id, webhookName, url, serverId },
     }));
+    return id;
   }
 
-  async getWebhook(name: string): Promise<{ name: string, url: string, serverId: string } | null> {
+  async getWebhook(webhookName: string): Promise<{ id: string, webhookName: string, url: string, serverId: string } | null> {
+    // Query using the GSI for name
+    const result = await this.db.send(new QueryCommand({
+      TableName: this.webhooksTableName,
+      IndexName: "NameIndex",
+      KeyConditionExpression: "webhookName = :webhookName",
+      ExpressionAttributeValues: { ":webhookName": webhookName },
+      Limit: 1
+    }));
+
+    if (!result.Items || result.Items.length === 0) {
+      return null;
+    }
+
+    return result.Items[0] as { id: string, webhookName: string, url: string, serverId: string };
+  }
+
+  async getWebhookById(id: string): Promise<{ id: string, webhookName: string, url: string, serverId: string } | null> {
     const result = await this.db.send(new GetCommand({
       TableName: this.webhooksTableName,
-      Key: { name },
+      Key: { id },
     }));
-    return result.Item as { name: string, url: string, serverId: string } || null;
+    return result.Item as { id: string, webhookName: string, url: string, serverId: string } || null;
   }
 
   // Add to your DynamoDatabase class
-  async getAllWebhooks(): Promise<{ name: string, url: string, serverId: string }[]> {
+  async getAllWebhooks(): Promise<{ id: string, webhookName: string, url: string, serverId: string }[]> {
     try {
       const result = await this.db.send(new ScanCommand({
         TableName: this.webhooksTableName,
       }));
 
-      return result.Items as { name: string, url: string, serverId: string }[] || [];
+      return result.Items as { id: string, webhookName: string, url: string, serverId: string }[] || [];
     } catch (error) {
       console.error("Error fetching webhooks:", error);
       throw error;
@@ -189,8 +255,8 @@ class DynamoDatabase {
   }
 
   // If you need pagination for large datasets, use this version:
-  async getAllWebhooksPaginated(): Promise<{ name: string, url: string, serverId: string }[]> {
-    const items: { name: string, url: string, serverId: string }[] = [];
+  async getAllWebhooksPaginated(): Promise<{ id: string, webhookName: string, url: string, serverId: string }[]> {
+    const items: { id: string, webhookName: string, url: string, serverId: string }[] = [];
     let lastEvaluatedKey: Record<string, any> | undefined = undefined;
 
     do {
@@ -200,7 +266,7 @@ class DynamoDatabase {
       }));
 
       if (result.Items) {
-        items.push(...result.Items as { name: string, url: string, serverId: string }[]);
+        items.push(...result.Items as { id: string, webhookName: string, url: string, serverId: string }[]);
       }
 
       lastEvaluatedKey = result.LastEvaluatedKey;
@@ -209,7 +275,7 @@ class DynamoDatabase {
     return items;
   }
 
-  async getAllWebhooksByServerId(serverId: string): Promise<{ name: string, url: string, serverId: string }[]> {
+  async getAllWebhooksByServerId(serverId: string): Promise<{ id: string, webhookName: string, url: string, serverId: string }[]> {
     try {
       const webhooksResponse = await this.db.send(new ScanCommand({
         TableName: this.webhooksTableName,
@@ -217,39 +283,54 @@ class DynamoDatabase {
         ExpressionAttributeValues: { ":serverId": serverId },
       }));
 
-      return (webhooksResponse.Items || []) as { name: string, url: string, serverId: string }[];
+      return (webhooksResponse.Items || []) as { id: string, webhookName: string, url: string, serverId: string }[];
     } catch (error) {
       console.error(`Error fetching webhooks for server ${serverId}:`, error);
       throw error;
     }
   }
 
-  async updateWebhook(name: string, url: string, serverId: string): Promise<void> {
+  async updateWebhook(webhookName: string, url: string, serverId: string): Promise<void> {
+    // First get the webhook by name to find its ID
+    const webhook = await this.getWebhook(webhookName);
+    if (!webhook) {
+      throw new Error(`Webhook with name ${webhookName} not found`);
+    }
+
     await this.db.send(new UpdateCommand({
       TableName: this.webhooksTableName,
-      Key: { name },
-      UpdateExpression: "SET #url = :url, #serverId = :serverId",
-      ExpressionAttributeNames: { "#url": "url", "#serverId": "serverId" },
-      ExpressionAttributeValues: { ":url": url, ":serverId": serverId },
+      Key: { id: webhook.id },
+      UpdateExpression: "SET #url = :url, #serverId = :serverId, #webhookName = :webhookName",
+      ExpressionAttributeNames: { "#url": "url", "#serverId": "serverId", "#webhookName": "webhookName" },
+      ExpressionAttributeValues: { ":url": url, ":serverId": serverId, ":webhookName": webhookName },
     }));
   }
 
-  async deleteWebhook(name: string): Promise<void> {
+  async deleteWebhook(webhookName: string): Promise<void> {
+    // First get the webhook by name to find its ID
+    const webhook = await this.getWebhook(webhookName);
+    if (!webhook) {
+      throw new Error(`Webhook with name ${webhookName} not found`);
+    }
+
     await this.db.send(new DeleteCommand({
       TableName: this.webhooksTableName,
-      Key: { name },
+      Key: { id: webhook.id },
     }));
   }
 
   // Regex Patterns Table Methods
-  async addRegex(serverId: string, regexPattern: string, webhookName: string): Promise<void> {
+  async addRegex(serverId: string, regexPattern: string, webhookName: string): Promise<string> {
+    const id = uuidv4();
     await this.db.send(new PutCommand({
       TableName: this.regexTableName,
-      Item: { serverId, regexPattern, webhookName },
+      Item: { id, serverId, regexPattern, webhookName },
     }));
+    return id;
   }
 
   async getAllRegex(): Promise<{
+    id: string;
     serverId: string;
     webhookName: string;
     regexPattern: string;
@@ -260,6 +341,7 @@ class DynamoDatabase {
       }));
 
       return result.Items as {
+        id: string;
         serverId: string;
         webhookName: string;
         regexPattern: string;
@@ -270,16 +352,17 @@ class DynamoDatabase {
     }
   }
 
-  async getRegexesByServer(serverId: string): Promise<{ serverId: string; regexPattern: string; webhookName: string }[]> {
+  async getRegexesByServer(serverId: string): Promise<{ id: string; serverId: string; regexPattern: string; webhookName: string }[]> {
     try {
-      // With the composite key, we can use a more efficient query operation
+      // Use the GSI to query by serverId
       const result = await this.db.send(new QueryCommand({
         TableName: this.regexTableName,
+        IndexName: "ServerRegexIndex",
         KeyConditionExpression: "serverId = :serverId",
         ExpressionAttributeValues: { ":serverId": serverId },
       }));
 
-      return result.Items as { serverId: string; regexPattern: string; webhookName: string }[] || [];
+      return result.Items as { id: string; serverId: string; regexPattern: string; webhookName: string }[] || [];
     } catch (error) {
       console.error(`Error fetching regexes for server ${serverId}:`, error);
       throw error;
@@ -288,10 +371,15 @@ class DynamoDatabase {
 
   async updateRegexWebhook(serverId: string, regexPattern: string, newWebhookName: string): Promise<void> {
     try {
-      // With the composite key, we can directly update the specific regex pattern
+      // First get the regex by serverId and regexPattern to find its ID
+      const regex = await this.getRegex(serverId, regexPattern);
+      if (!regex) {
+        throw new Error(`Regex pattern "${regexPattern}" for server ${serverId} not found`);
+      }
+
       await this.db.send(new UpdateCommand({
         TableName: this.regexTableName,
-        Key: { serverId, regexPattern },
+        Key: { id: regex.id },
         UpdateExpression: "SET webhookName = :whn",
         ExpressionAttributeValues: { ":whn": newWebhookName },
       }));
@@ -310,6 +398,12 @@ class DynamoDatabase {
       webhookName?: string;
     }
   ): Promise<void> {
+    // First get the regex by serverId and pattern to find its ID
+    const regex = await this.getRegex(serverId, pattern);
+    if (!regex) {
+      throw new Error(`Regex pattern "${pattern}" for server ${serverId} not found`);
+    }
+
     const updateExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {};
@@ -324,7 +418,7 @@ class DynamoDatabase {
 
     await this.db.send(new UpdateCommand({
       TableName: this.regexTableName,
-      Key: { serverId, regexPattern: pattern },
+      Key: { id: regex.id },
       UpdateExpression: `SET ${updateExpressions.join(", ")}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -333,10 +427,15 @@ class DynamoDatabase {
 
   async deleteRegex(serverId: string, regexPattern: string): Promise<void> {
     try {
-      // With the composite key, we can directly delete the specific regex pattern
+      // First get the regex by serverId and regexPattern to find its ID
+      const regex = await this.getRegex(serverId, regexPattern);
+      if (!regex) {
+        throw new Error(`Regex pattern "${regexPattern}" for server ${serverId} not found`);
+      }
+
       await this.db.send(new DeleteCommand({
         TableName: this.regexTableName,
-        Key: { serverId, regexPattern }
+        Key: { id: regex.id }
       }));
 
       console.log(`Successfully deleted regex pattern "${regexPattern}" for server ${serverId}`);
@@ -346,14 +445,25 @@ class DynamoDatabase {
     }
   }
 
-  async getRegex(serverId: string, regexPattern: string): Promise<{ serverId: string; regexPattern: string; webhookName: string } | null> {
+  async getRegex(serverId: string, regexPattern: string): Promise<{ id: string; serverId: string; regexPattern: string; webhookName: string } | null> {
     try {
-      const result = await this.db.send(new GetCommand({
+      // Use the GSI to query by serverId and regexPattern
+      const result = await this.db.send(new QueryCommand({
         TableName: this.regexTableName,
-        Key: { serverId, regexPattern }
+        IndexName: "ServerRegexIndex",
+        KeyConditionExpression: "serverId = :serverId AND regexPattern = :regexPattern",
+        ExpressionAttributeValues: {
+          ":serverId": serverId,
+          ":regexPattern": regexPattern
+        },
+        Limit: 1
       }));
 
-      return result.Item as { serverId: string; regexPattern: string; webhookName: string } || null;
+      if (!result.Items || result.Items.length === 0) {
+        return null;
+      }
+
+      return result.Items[0] as { id: string; serverId: string; regexPattern: string; webhookName: string };
     } catch (error) {
       console.error(`Error fetching regex pattern "${regexPattern}" for server ${serverId}:`, error);
       throw error;
@@ -363,39 +473,53 @@ class DynamoDatabase {
   // Discord Servers Table Methods
   async createServer(
     serverId: string,
-    name: string,
+    serverName: string,
     status: "active" | "disabled",
     totalUsers: number,
-  ): Promise<void> {
+  ): Promise<string> {
+    const id = uuidv4();
     await this.db.send(new PutCommand({
       TableName: this.serversTableName,
-      Item: { serverId, name, status, totalUsers },
+      Item: { id, serverId, serverName, status, totalUsers },
     }));
+    return id;
   }
 
   async getServer(serverId: string): Promise<{
+    id: string;
     serverId: string;
-    name: string;
+    serverName: string;
     status: "active" | "disabled";
     totalUsers: number;
     email?: string;
   } | null> {
-    const result = await this.db.send(new GetCommand({
+    // Use the GSI to query by serverId
+    const result = await this.db.send(new QueryCommand({
       TableName: this.serversTableName,
-      Key: { serverId },
+      IndexName: "ServerIdIndex",
+      KeyConditionExpression: "serverId = :serverId",
+      ExpressionAttributeValues: { ":serverId": serverId },
+      Limit: 1
     }));
-    return result.Item as {
+
+    if (!result.Items || result.Items.length === 0) {
+      return null;
+    }
+
+    return result.Items[0] as {
+      id: string;
       serverId: string;
-      name: string;
+      serverName: string;
       status: "active" | "disabled";
       totalUsers: number;
       email?: string;
-    } | null;
+    };
   }
 
   async getAllServers(): Promise<{
+    id: string;
     serverId: string;
-    name: string;
+    serverName: string;
     status: "active" | "disabled";
     totalUsers: number;
     email?: string;
@@ -406,8 +530,9 @@ class DynamoDatabase {
       }));
 
       return result.Items as {
+        id: string;
         serverId: string;
-        name: string;
+        serverName: string;
         status: "active" | "disabled";
         totalUsers: number;
         email?: string;
@@ -421,12 +546,18 @@ class DynamoDatabase {
   async updateServer(
     serverId: string,
     updates: {
-      name?: string;
+      serverName?: string;
       status?: "active" | "disabled";
       totalUsers?: number;
       email?: string;
     }
   ): Promise<void> {
+    // First get the server by serverId to find its ID
+    const server = await this.getServer(serverId);
+    if (!server) {
+      throw new Error(`Server with serverId ${serverId} not found`);
+    }
+
     const updateExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {};
@@ -441,7 +572,7 @@ class DynamoDatabase {
 
     await this.db.send(new UpdateCommand({
       TableName: this.serversTableName,
-      Key: { serverId },
+      Key: { id: server.id },
       UpdateExpression: `SET ${updateExpressions.join(", ")}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -449,9 +580,15 @@ class DynamoDatabase {
   }
 
   async deleteServer(serverId: string): Promise<void> {
+    // First get the server by serverId to find its ID
+    const server = await this.getServer(serverId);
+    if (!server) {
+      throw new Error(`Server with serverId ${serverId} not found`);
+    }
+
     await this.db.send(new DeleteCommand({
       TableName: this.serversTableName,
-      Key: { serverId },
+      Key: { id: server.id },
     }));
   }
 }

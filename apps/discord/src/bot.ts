@@ -36,19 +36,15 @@ client.on(Events.GuildCreate, async (guild: Guild) => {
   }
 });
 
-// Register all the slash commands
+// Do the autocompletion here
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isAutocomplete()) {
     try {
-      // Do the autocompletion here
-      // const focusValue = interaction.options.getFocused(true);
-      // const choices: { name: string; url: string }[] = await database.getAllWebhooksByServerId(interaction.guildId as string);
       let choices: IWebhook[] | undefined = cache.get(interaction.guildId as string)?.webhooks;
       if (!choices) {
         choices = await database.getAllWebhooksByServerId(interaction.guildId as string);
         cache.set(interaction.guildId as string, { webhooks: choices });
       }
-      console.log({ choices, serverId: interaction.guildId });
 
       await interaction.respond(
         choices.map(choice => ({ name: choice.name, value: choice.name }))

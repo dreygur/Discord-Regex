@@ -13,7 +13,7 @@ export class DynamoDBStack extends cdk.Stack {
 
     // Create Webhooks table
     this.webhooksTable = new dynamodb.Table(this, 'WebhooksTable', {
-      partitionKey: { name: 'name', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       tableName: 'Webhooks',
       removalPolicy: RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,
@@ -21,10 +21,18 @@ export class DynamoDBStack extends cdk.Stack {
       writeCapacity: 5,
     });
 
+    // Add GSI for name to maintain backward compatibility
+    this.webhooksTable.addGlobalSecondaryIndex({
+      indexName: 'NameIndex',
+      partitionKey: { name: 'webhookName', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+      readCapacity: 5,
+      writeCapacity: 5,
+    });
+
     // Create Regex Patterns table
     this.regexTable = new dynamodb.Table(this, 'RegexTable', {
-      partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
-      sortKey: { name: 'regexPattern', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       tableName: 'RegexPatterns',
       removalPolicy: RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,
@@ -32,12 +40,31 @@ export class DynamoDBStack extends cdk.Stack {
       writeCapacity: 5,
     });
 
+    // Add GSI for serverId and regexPattern to maintain backward compatibility
+    this.regexTable.addGlobalSecondaryIndex({
+      indexName: 'ServerRegexIndex',
+      partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'regexPattern', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+      readCapacity: 5,
+      writeCapacity: 5,
+    });
+
     // Create Servers table
     this.serversTable = new dynamodb.Table(this, 'ServersTable', {
-      partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       tableName: 'Servers',
       removalPolicy: RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,
+      readCapacity: 5,
+      writeCapacity: 5,
+    });
+
+    // Add GSI for serverId to maintain backward compatibility
+    this.serversTable.addGlobalSecondaryIndex({
+      indexName: 'ServerIdIndex',
+      partitionKey: { name: 'serverId', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
       readCapacity: 5,
       writeCapacity: 5,
     });

@@ -24,17 +24,21 @@ export type CacheOptions = {
 };
 
 export interface IRegexGuild {
+  id: string;
   serverId: string;
   regexPattern: string;
   webhookName: string
 };
 
 export interface IWebhook {
+  id: string;
   name: string;
-  url: string
+  url: string;
+  serverId: string;
 };
 
 export interface IServer {
+  id: string;
   serverId: string;
   name: string;
   status: "active" | "disabled";
