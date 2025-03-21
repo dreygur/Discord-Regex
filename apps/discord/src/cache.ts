@@ -1,5 +1,8 @@
 import { CacheEntry, CacheOptions } from "./types";
 
+/**
+ * Cache entry
+ */
 class Cache<T> {
   private entries: Map<string, CacheEntry<T>> = new Map();
   private defaultTtl: number | null;

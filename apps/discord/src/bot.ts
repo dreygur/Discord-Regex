@@ -5,7 +5,9 @@ import { database } from './database';
 import { cache } from './cache';
 import { IWebhook } from './types';
 
-// Discord Bot client
+/**
+ * Discord Bot client
+ */
 export const client: Client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
