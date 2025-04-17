@@ -4,6 +4,23 @@ import { database } from "./database";
 import { cache } from "./cache";
 import type { IRegexGuild, IServer, IWebhook } from "./types";
 
+function parseRawRegex(raw: string) {
+  if (typeof raw !== "string") throw new Error("Regex must be a string");
+
+  // Find the first and last slashes
+  const firstSlash = raw.indexOf("/");
+  const lastSlash = raw.lastIndexOf("/");
+
+  if (firstSlash === -1 || lastSlash === firstSlash) {
+    throw new Error("Invalid regex format");
+  }
+
+  const pattern = raw.slice(firstSlash + 1, lastSlash);
+  const flags = raw.slice(lastSlash + 1);
+
+  return new RegExp(pattern, flags);
+}
+
 // Cache All the webhooks
 export async function regexHandler(message: OmitPartialGroupDMChannel<Message<boolean>>) {
   if (message.content.length === 0) return;
@@ -35,7 +52,8 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
   patterns.forEach(pattern => {
     try {
       // Check if the regex pattern matches message.content
-      if (!(new RegExp(pattern.regexPattern).test(message.content)) || !webhooks) return;
+      // if (!(new RegExp(pattern.regexPattern).test(message.content)) || !webhooks) return;
+      if (!(parseRawRegex(pattern.regexPattern).test(message.content)) || !webhooks) return;
     } catch (errr) {
       console.log(errr);
       return;
