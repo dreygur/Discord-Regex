@@ -1,4 +1,4 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
 import type { CommandInteraction, SlashCommandStringOption } from "discord.js";
 import { BotCommand } from "../types";
 import { database } from "../database";
@@ -17,7 +17,7 @@ const command: BotCommand = {
       .setDescription("The webhook to send notifications")
       .setAutocomplete(true)
     )
-  ,
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   execute: async (interaction: CommandInteraction) => {
     try {
       await database.addRegex(

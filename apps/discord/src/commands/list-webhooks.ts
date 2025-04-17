@@ -1,4 +1,4 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { CommandInteraction } from "discord.js";
 import { BotCommand } from "../types";
 import { database } from "../database";
@@ -7,7 +7,8 @@ import { config } from "../config";
 const command: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("list-webhooks")
-    .setDescription("Lists webhooks"),
+    .setDescription("Lists webhooks")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   execute: async (interaction: CommandInteraction) => {
     try {
       const webhooks = await database.getAllWebhooksByServerId(interaction.guildId as string);

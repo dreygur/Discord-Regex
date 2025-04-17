@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { CommandInteraction, SlashCommandStringOption } from "discord.js";
 import { BotCommand } from "../types";
 import { database } from "../database";
@@ -10,7 +10,8 @@ const command: BotCommand = {
     .addStringOption((option: SlashCommandStringOption) => option
       .setName("pattern")
       .setDescription("The regex pattern to remove")
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   execute: async (interaction: CommandInteraction) => {
     try {
       await database.deleteRegex(interaction.guildId as string, interaction.options.get('pattern')?.value as string);

@@ -1,4 +1,4 @@
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import type { CommandInteraction } from "discord.js";
 import { BotCommand } from "../types";
 import { database } from "../database";
@@ -8,7 +8,7 @@ const command: BotCommand = {
   data: new SlashCommandBuilder()
     .setName("list-pattern")
     .setDescription("Lists all regex pattern")
-  ,
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   execute: async (interaction: CommandInteraction) => {
     try {
       const patterns = await database.getRegexesByServer(interaction.guildId as string);

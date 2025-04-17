@@ -33,8 +33,13 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
   if (!patterns || !servers || servers.status === 'disabled') return;
 
   patterns.forEach(pattern => {
-    // Check if the regex pattern matches message.content
-    if (!(new RegExp(pattern.regexPattern).test(message.content)) || !webhooks) return;
+    try {
+      // Check if the regex pattern matches message.content
+      if (!(new RegExp(pattern.regexPattern).test(message.content)) || !webhooks) return;
+    } catch (errr) {
+      console.log(errr);
+      return;
+    }
     const webhook = webhooks.find(w => w.name === pattern.webhookName);
     if (webhook) {
       console.log('Sending message to webhook:', webhook.url);
