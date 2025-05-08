@@ -159,10 +159,10 @@ class DynamoDatabase {
   }
 
   // Webhooks Table Methods
-  async createWebhook(name: string, url: string, serverId: string): Promise<void> {
+  async createWebhook(name: string, url: string, serverId: string, data: string): Promise<void> {
     await this.db.send(new PutCommand({
       TableName: this.webhooksTableName,
-      Item: { name, url, serverId },
+      Item: { name, url, serverId, data },
     }));
   }
 
@@ -171,7 +171,7 @@ class DynamoDatabase {
       TableName: this.webhooksTableName,
       Key: { name },
     }));
-    return result.Item as { name: string, url: string, serverId: string } || null;
+    return result.Item as { name: string, url: string, serverId: string, data: string } || null;
   }
 
   // Add to your DynamoDatabase class
@@ -181,7 +181,7 @@ class DynamoDatabase {
         TableName: this.webhooksTableName,
       }));
 
-      return result.Items as { name: string, url: string, serverId: string }[] || [];
+      return result.Items as { name: string, url: string, serverId: string, data: string }[] || [];
     } catch (error) {
       console.error("Error fetching webhooks:", error);
       throw error;
@@ -209,7 +209,7 @@ class DynamoDatabase {
     return items;
   }
 
-  async getAllWebhooksByServerId(serverId: string): Promise<{ name: string, url: string, serverId: string }[]> {
+  async getAllWebhooksByServerId(serverId: string): Promise<{ name: string, url: string, serverId: string, data: string }[]> {
     try {
       const webhooksResponse = await this.db.send(new ScanCommand({
         TableName: this.webhooksTableName,
@@ -217,20 +217,20 @@ class DynamoDatabase {
         ExpressionAttributeValues: { ":serverId": serverId },
       }));
 
-      return (webhooksResponse.Items || []) as { name: string, url: string, serverId: string }[];
+      return (webhooksResponse.Items || []) as { name: string, url: string, serverId: string, data: string }[];
     } catch (error) {
       console.error(`Error fetching webhooks for server ${serverId}:`, error);
       throw error;
     }
   }
 
-  async updateWebhook(name: string, url: string, serverId: string): Promise<void> {
+  async updateWebhook(name: string, url: string, serverId: string, data: string): Promise<void> {
     await this.db.send(new UpdateCommand({
       TableName: this.webhooksTableName,
       Key: { name },
-      UpdateExpression: "SET #url = :url, #serverId = :serverId",
-      ExpressionAttributeNames: { "#url": "url", "#serverId": "serverId" },
-      ExpressionAttributeValues: { ":url": url, ":serverId": serverId },
+      UpdateExpression: "SET #url = :url, #serverId = :serverId, #data = :data",
+      ExpressionAttributeNames: { "#url": "url", "#serverId": "serverId", "#data": "data" },
+      ExpressionAttributeValues: { ":url": url, ":serverId": serverId, ":data": data },
     }));
   }
 

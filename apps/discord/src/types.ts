@@ -31,7 +31,9 @@ export interface IRegexGuild {
 
 export interface IWebhook {
   name: string;
-  url: string
+  url: string;
+  serverId: string;
+  data: string;
 };
 
 export interface IServer {

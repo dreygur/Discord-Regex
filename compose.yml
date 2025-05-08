@@ -16,48 +16,48 @@ services:
     networks:
       - discord-network
 
-  dashboard:
-    build:
-      context: .
-      dockerfile: apps/dashboard/Dockerfile
-      args:
-        NEXT_PUBLIC_BASE_URL: http://dashboard:3000
-        NEXT_REGION: 'us-west-2'
-        NEXT_ENDPOINT: http://dynamodb:8000
-        NEXT_ACCESS_KEY_ID: jmj0pe
-        NEXT_SECRET_ACCESS_KEY: jkq4o6
-        NEXT_HASHED_PASSWORD: ce8ef0001ea4b12a435851381d2a1e5b616061cc74d1f804fd490a6805e36c16
-        NEXT_VALID_EMAIL: wesley@mail.com
-        CACHE_TTL: 10000
-        DEFAULT_RETRIES: 3
-        DEFAULT_DELAY: 1000
-    container_name: dashboard
-    restart: always
-    ports:
-      - "3000:3000"
-    depends_on:
-      dynamodb:
-        condition: service_healthy
-    networks:
-      - discord-network
-  discord:
-    build:
-      context: .
-      dockerfile: apps/discord/Dockerfile
-      args:
-        TOKEN: OTU0NTEzOTg2NjI2Mzg3OTY5.G8Jg0d.IXIaAYKiYHNWXazkicS4d6XdpHpjj9zRJaom5E
-        THUMBNAIL: https://i.imgur.com/AfFp7pu.png
-        REGION: 'us-west-2'
-        ENDPOINT: http://dynamodb:8000
-        ACCESS_KEY_ID: jmj0pe
-        SECRET_ACCESS_KEY: jkq4o6
-    container_name: discord
-    restart: always
-    depends_on:
-      dynamodb:
-        condition: service_healthy
-    networks:
-      - discord-network
+  # dashboard:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/dashboard/Dockerfile
+  #     args:
+  #       NEXT_PUBLIC_BASE_URL: http://dashboard:3000
+  #       NEXT_REGION: 'us-west-2'
+  #       NEXT_ENDPOINT: http://dynamodb:8000
+  #       NEXT_ACCESS_KEY_ID: jmj0pe
+  #       NEXT_SECRET_ACCESS_KEY: jkq4o6
+  #       NEXT_HASHED_PASSWORD: ce8ef0001ea4b12a435851381d2a1e5b616061cc74d1f804fd490a6805e36c16
+  #       NEXT_VALID_EMAIL: wesley@mail.com
+  #       CACHE_TTL: 10000
+  #       DEFAULT_RETRIES: 3
+  #       DEFAULT_DELAY: 1000
+  #   container_name: dashboard
+  #   restart: always
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     dynamodb:
+  #       condition: service_healthy
+  #   networks:
+  #     - discord-network
+  # discord:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/discord/Dockerfile
+  #     args:
+  #       TOKEN: OTU0NTEzOTg2NjI2Mzg3OTY5.G8Jg0d.IXIaAYKiYHNWXazkicS4d6XdpHpjj9zRJaom5E
+  #       THUMBNAIL: https://i.imgur.com/AfFp7pu.png
+  #       REGION: 'us-west-2'
+  #       ENDPOINT: http://dynamodb:8000
+  #       ACCESS_KEY_ID: jmj0pe
+  #       SECRET_ACCESS_KEY: jkq4o6
+  #   container_name: discord
+  #   restart: always
+  #   depends_on:
+  #     dynamodb:
+  #       condition: service_healthy
+  #   networks:
+  #     - discord-network
 
 networks:
   discord-network:

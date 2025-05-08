@@ -43,9 +43,13 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
     const webhook = webhooks.find(w => w.name === pattern.webhookName);
     if (webhook) {
       console.log('Sending message to webhook:', webhook.url);
+      let body = JSON.stringify({ content: message.content });
+      if (webhook.data) {
+        body = webhook.data.replace(/\$content\$/g, message.content);
+      }
       queue.add(new URL(webhook.url), {
         method: 'POST',
-        body: JSON.stringify({ content: message.content }),
+        body,
         headers: { 'Content-Type': 'application/json' }
       })
         .then(response => {
