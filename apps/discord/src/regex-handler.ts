@@ -4,22 +4,27 @@ import { database } from "./database";
 import { cache } from "./cache";
 import type { IRegexGuild, IServer, IWebhook } from "./types";
 
-function parseRawRegex(raw: string) {
-  if (typeof raw !== "string") throw new Error("Regex must be a string");
+function parseRegex(input: any, defaultFlags: string = "") {
+  if (input instanceof RegExp) return input; // Already a RegExp
 
-  // Find the first and last slashes
-  const firstSlash = raw.indexOf("/");
-  const lastSlash = raw.lastIndexOf("/");
-
-  if (firstSlash === -1 || lastSlash === firstSlash) {
-    throw new Error("Invalid regex format");
+  if (typeof input !== "string") {
+    throw new Error("Regex must be a string or RegExp");
   }
 
-  const pattern = raw.slice(firstSlash + 1, lastSlash);
-  const flags = raw.slice(lastSlash + 1);
+  const isWrapped = input.startsWith("/") && input.lastIndexOf("/") > 0;
 
-  return new RegExp(pattern, flags);
+  if (isWrapped) {
+    // Extract pattern and flags from `/pattern/flags`
+    const lastSlash = input.lastIndexOf("/");
+    const pattern = input.slice(1, lastSlash);
+    const flags = input.slice(lastSlash + 1);
+    return new RegExp(pattern, flags);
+  } else {
+    // Just a raw pattern, use default flags
+    return new RegExp(input, defaultFlags);
+  }
 }
+
 
 // Cache All the webhooks
 export async function regexHandler(message: OmitPartialGroupDMChannel<Message<boolean>>) {
@@ -53,7 +58,7 @@ export async function regexHandler(message: OmitPartialGroupDMChannel<Message<bo
     try {
       // Check if the regex pattern matches message.content
       // if (!(new RegExp(pattern.regexPattern).test(message.content)) || !webhooks) return;
-      if (!(parseRawRegex(pattern.regexPattern).test(message.content)) || !webhooks) return;
+      if (!(parseRegex(pattern.regexPattern).test(message.content)) || !webhooks) return;
     } catch (errr) {
       console.log(errr);
       return;
