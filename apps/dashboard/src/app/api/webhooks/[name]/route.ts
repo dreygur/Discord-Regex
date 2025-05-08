@@ -17,12 +17,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ name
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   try {
-    const { url, serverId } = await req.json();
+    const { url, serverId, data } = await req.json();
     if (!url || !serverId) {
       return NextResponse.json({ message: "Missing required fields: url and serverId" }, { status: 400 });
     }
 
-    await database.updateWebhook((await params).name, url, serverId);
+    await database.updateWebhook((await params).name, url, serverId, data);
     return NextResponse.json({ message: "Webhook updated successfully" });
   } catch (error) {
     console.error("Error updating webhook:", error);

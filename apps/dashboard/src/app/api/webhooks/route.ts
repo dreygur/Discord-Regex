@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, url, serverId } = await req.json();
+    const { name, url, serverId, data } = await req.json();
     if (!name || !url || !serverId) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    await database.createWebhook(name, url, serverId);
+    await database.createWebhook(name, url, serverId, data);
     return NextResponse.json({ message: "Webhook created successfully" }, { status: 201 });
   } catch (error) {
     console.error("Error creating webhook:", error);
