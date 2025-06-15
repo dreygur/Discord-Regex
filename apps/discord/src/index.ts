@@ -20,7 +20,7 @@ async function initializeDatabase() {
 function start() {
   // When the client is ready show som logs
   client.once(Events.ClientReady, (readyClient: Client<true>) => {
-    console.log(`Logged in as ${readyClient.user.tag}`)
+    console.log(`Logged in as ${readyClient.user.tag}`, readyClient.user.id);
   });
 
   // Login to Discord using the client token
