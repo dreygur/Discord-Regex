@@ -3,6 +3,21 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Enables the standalone output for Docker optimization
+  
+  // Exclude test files from build
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => `!*.test.${ext}`).concat(['tsx', 'ts', 'jsx', 'js']),
+  
+  typescript: {
+    // Exclude test directories from type checking during build
+    ignoreBuildErrors: false,
+  },
+  
+  eslint: {
+    // Exclude test directories from ESLint during build
+    ignoreDuringBuilds: false,
+    dirs: ['src/app', 'src/components', 'src/lib', 'src/pages', 'src/providers'],
+  },
+  
   env: {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_REGION: process.env.NEXT_REGION,

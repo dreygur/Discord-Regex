@@ -45,8 +45,6 @@ RUN pnpm install --no-frozen-lockfile
 
 # Build the project
 COPY --from=builder /app/out/full/ .
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
 RUN pnpm turbo run build
 
 FROM base AS runner

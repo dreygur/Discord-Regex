@@ -24,5 +24,13 @@
   "include": [
     "./src/**/*",
     "../../packages/database/src/cache.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "vitest.config.ts"
   ]
 }
