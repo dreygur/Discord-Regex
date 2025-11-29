@@ -483,7 +483,7 @@ class DynamoDatabase {
       name?: string;
       status?: "active" | "disabled";
       totalUsers?: number;
-      email?: string;
+      email?: string | null;
     }
   ): Promise<void> {
     // Validate server status if it's being updated
@@ -495,25 +495,48 @@ class DynamoDatabase {
       }
     }
     
-    const updateExpressions: string[] = [];
+    const setExpressions: string[] = [];
+    const removeExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {};
 
     Object.entries(updates).forEach(([key, value], index) => {
-      updateExpressions.push(`#${key} = :val${index}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:val${index}`] = value;
+      // If value is null or empty string, remove the attribute
+      if (value === null || value === '') {
+        removeExpressions.push(`#${key}`);
+        expressionAttributeNames[`#${key}`] = key;
+      } else {
+        // Otherwise, set the attribute
+        setExpressions.push(`#${key} = :val${index}`);
+        expressionAttributeNames[`#${key}`] = key;
+        expressionAttributeValues[`:val${index}`] = value;
+      }
     });
 
-    if (updateExpressions.length === 0) return;
+    if (setExpressions.length === 0 && removeExpressions.length === 0) return;
 
-    await this.db.send(new UpdateCommand({
+    // Build the update expression
+    const updateParts: string[] = [];
+    if (setExpressions.length > 0) {
+      updateParts.push(`SET ${setExpressions.join(", ")}`);
+    }
+    if (removeExpressions.length > 0) {
+      updateParts.push(`REMOVE ${removeExpressions.join(", ")}`);
+    }
+
+    const updateCommand: any = {
       TableName: this.serversTableName,
       Key: { serverId },
-      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      UpdateExpression: updateParts.join(" "),
       ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-    }));
+    };
+
+    // Only add ExpressionAttributeValues if we have SET operations
+    if (Object.keys(expressionAttributeValues).length > 0) {
+      updateCommand.ExpressionAttributeValues = expressionAttributeValues;
+    }
+
+    await this.db.send(new UpdateCommand(updateCommand));
   }
 
   async deleteServer(serverId: string): Promise<void> {
