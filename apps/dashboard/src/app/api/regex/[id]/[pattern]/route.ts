@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     
     debug.log('API received:', { webhookName, user_ids });
 
-    const updates: any = { webhookName };
+    const updates: { webhookName: string; user_ids?: string[] } = { webhookName };
     if (user_ids !== undefined) {
       updates.user_ids = user_ids;
     }

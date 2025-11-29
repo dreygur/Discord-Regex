@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     // Validate and sanitize all inputs
     const name = validateWebhookName(body.name);
     const serverId = validateServerId(body.serverId);
-    const data = sanitizeDataTemplate(body.data);
+    const data = sanitizeDataTemplate(body.data) || '';
     
     // URL validation is handled by database.createWebhook
     if (!body.url || typeof body.url !== 'string') {

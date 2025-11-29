@@ -9,7 +9,7 @@ import Loading from "../../app/loading";
 import toast from "react-hot-toast";
 
 const debug = {
-  log: (...args: any[]) => {
+  log: (...args: unknown[]) => {
     if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
       console.log(...args);
     }

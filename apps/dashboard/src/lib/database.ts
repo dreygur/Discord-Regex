@@ -7,7 +7,7 @@ const endpoint = process.env.NEXT_ENDPOINT;
 const accessKeyId = process.env.NEXT_ACCESS_KEY_ID;
 const secretAccessKey = process.env.NEXT_SECRET_ACCESS_KEY;
 
-let config: IDBClientOptions = {
+const config: IDBClientOptions = {
   webhooksTableName: "Webhooks",
   regexTableName: "RegexPatterns",
   serversTableName: "Servers"
