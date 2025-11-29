@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, FormEvent, ChangeEvent } from "react";
+import React, { useState, FormEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useServers } from "@/hooks/useServers";
 import toast from "react-hot-toast";
 
 interface WebhookPayload {
@@ -23,6 +25,7 @@ export default function CreateWebhook() {
   const [jsonError, setJsonError] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
+  const { data: servers, loading: serversLoading, error: serversError, refetch: refetchServers } = useServers();
 
   const validateJson = (value: string): boolean => {
     if (!value.trim()) {
@@ -54,8 +57,8 @@ export default function CreateWebhook() {
     setUrl(e.target.value.trim());
   };
 
-  const handleServerIdChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setServerId(e.target.value.trim());
+  const handleServerIdChange = (value: string): void => {
+    setServerId(value);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -127,14 +130,47 @@ export default function CreateWebhook() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor="webhook-server-id">Server ID</Label>
-          <Input
-            id="webhook-server-id"
-            type="text"
-            value={serverId}
-            onChange={handleServerIdChange}
-            required
-          />
+          <Label htmlFor="webhook-server-id">Server</Label>
+          {serversLoading ? (
+            <div className="h-9 flex items-center px-3 border rounded-md text-sm text-muted-foreground">
+              Loading servers...
+            </div>
+          ) : serversError ? (
+            <div className="space-y-2">
+              <div className="h-9 flex items-center px-3 border border-red-500 rounded-md text-sm text-red-500">
+                Error loading servers
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={refetchServers}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : servers.length === 0 ? (
+            <div className="h-9 flex items-center px-3 border rounded-md text-sm text-muted-foreground">
+              No servers available
+            </div>
+          ) : (
+            <Select
+              value={serverId}
+              onValueChange={handleServerIdChange}
+              required
+            >
+              <SelectTrigger id="webhook-server-id" aria-label="Select server">
+                <SelectValue placeholder="Select a server" />
+              </SelectTrigger>
+              <SelectContent>
+                {servers.map((server) => (
+                  <SelectItem key={server.serverId} value={server.serverId}>
+                    {server.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
