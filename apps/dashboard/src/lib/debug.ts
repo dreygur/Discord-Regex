@@ -10,7 +10,7 @@ export interface LogContext {
   userId?: string;
   email?: string;
   endpoint?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined | null | string[] | number[];
 }
 
 export interface LogEntry {

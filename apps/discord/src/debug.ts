@@ -49,6 +49,26 @@ export const logger = new Logger();
 
 // Maintain backward compatibility with old debug interface
 export const debug = {
-  log: (message: string, context?: LogContext) => logger.info(message, context),
-  error: (message: string, context?: LogContext) => logger.error(message, context)
+  log: (message: string, context?: LogContext | any) => {
+    // If context is a primitive value, wrap it in an object
+    if (context !== undefined && context !== null && typeof context !== 'object') {
+      logger.info(message, { value: context });
+    } else {
+      logger.info(message, context);
+    }
+  },
+  error: (message: string, context?: LogContext | any) => {
+    // If context is a primitive value or error, wrap it appropriately
+    if (context !== undefined && context !== null) {
+      if (context instanceof Error) {
+        logger.error(message, { error: context.message, stack: context.stack });
+      } else if (typeof context !== 'object') {
+        logger.error(message, { value: context });
+      } else {
+        logger.error(message, context);
+      }
+    } else {
+      logger.error(message, context);
+    }
+  }
 };

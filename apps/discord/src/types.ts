@@ -26,7 +26,8 @@ export type CacheOptions = {
 export interface IRegexGuild {
   serverId: string;
   regexPattern: string;
-  webhookName: string
+  webhookName: string;
+  user_ids?: string[];
 };
 
 export interface IWebhook {

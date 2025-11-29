@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Enables the standalone output for Docker optimization
   
-  // Exclude test files from build
-  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => `!*.test.${ext}`).concat(['tsx', 'ts', 'jsx', 'js']),
-  
   typescript: {
     // Exclude test directories from type checking during build
     ignoreBuildErrors: false,

@@ -36,7 +36,12 @@ export async function PUT(
     const body = await req.json();
     
     // Validate and sanitize update fields
-    const updates: any = {};
+    const updates: { 
+      name?: string; 
+      status?: 'active' | 'disabled'; 
+      totalUsers?: number;
+      email?: string;
+    } = {};
     if (body.name !== undefined) {
       updates.name = validateServerName(body.name);
     }

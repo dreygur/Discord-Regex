@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ name
     
     // Validate and sanitize inputs
     const serverId = validateServerId(body.serverId);
-    const data = sanitizeDataTemplate(body.data);
+    const data = sanitizeDataTemplate(body.data) || '';
     
     if (!body.url || typeof body.url !== 'string') {
       return NextResponse.json({ message: "Webhook URL is required" }, { status: 400 });
