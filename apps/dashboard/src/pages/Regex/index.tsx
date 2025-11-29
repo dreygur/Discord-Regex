@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 interface Regex {
   serverId: string;
   webhookName: string;
+  user_ids: string[];
   regexPattern: string;
 }
 
@@ -51,6 +52,11 @@ export default function Regex() {
       accessorKey: "serverId",
       header: "Server ID",
       cell: ({ row }) => <span>{row.original.serverId}</span>
+    },
+    {
+      accessorKey: "user_ids",
+      header: "User IDs",
+      cell: ({ row }) => <span>{row.original.user_ids ? row.original.user_ids.join(', ') : 'All'}</span>
     },
     {
       accessorKey: "regexPattern",

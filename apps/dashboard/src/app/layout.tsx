@@ -29,6 +29,11 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
+          <header className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-center py-4 shadow-lg">
+            <h1 className="text-2xl md:text-3xl font-bold text-black tracking-wide">
+              cpStacks (Copy Stacks) Trading Discord Bot
+            </h1>
+          </header>
           <Navbar />
           {children}
         </AuthProvider>

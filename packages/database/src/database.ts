@@ -18,6 +18,7 @@ import {
   UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
 import { IDBClientOptions } from "./types";
+import { validateRegexPattern, validateWebhookUrl, validateServerStatus } from "./validation";
 
 class DynamoDatabase {
   private client: DynamoDBClient;
@@ -160,6 +161,15 @@ class DynamoDatabase {
 
   // Webhooks Table Methods
   async createWebhook(name: string, url: string, serverId: string, data: string): Promise<void> {
+    // Validate webhook URL before persistence
+    try {
+      // Check if we're in production environment
+      const isProduction = process.env.NODE_ENV === 'production';
+      validateWebhookUrl(url, isProduction);
+    } catch (error) {
+      throw new Error(`Invalid webhook URL: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
     await this.db.send(new PutCommand({
       TableName: this.webhooksTableName,
       Item: { name, url, serverId, data },
@@ -225,6 +235,15 @@ class DynamoDatabase {
   }
 
   async updateWebhook(name: string, url: string, serverId: string, data: string): Promise<void> {
+    // Validate webhook URL before persistence
+    try {
+      // Check if we're in production environment
+      const isProduction = process.env.NODE_ENV === 'production';
+      validateWebhookUrl(url, isProduction);
+    } catch (error) {
+      throw new Error(`Invalid webhook URL: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
     await this.db.send(new UpdateCommand({
       TableName: this.webhooksTableName,
       Key: { name },
@@ -242,10 +261,21 @@ class DynamoDatabase {
   }
 
   // Regex Patterns Table Methods
-  async addRegex(serverId: string, regexPattern: string, webhookName: string): Promise<void> {
+  async addRegex(serverId: string, regexPattern: string, webhookName: string, userIds?: string[]): Promise<void> {
+    // Validate regex pattern before persistence
+    try {
+      validateRegexPattern(regexPattern);
+    } catch (error) {
+      throw new Error(`Invalid regex pattern: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    const item: any = { serverId, regexPattern, webhookName };
+    // Always store user_ids, default to ['All']
+    const finalUserIds = userIds && userIds.length > 0 ? userIds : ['All'];
+    item.user_ids = new Set(finalUserIds);
     await this.db.send(new PutCommand({
       TableName: this.regexTableName,
-      Item: { serverId, regexPattern, webhookName },
+      Item: item,
     }));
   }
 
@@ -253,16 +283,21 @@ class DynamoDatabase {
     serverId: string;
     webhookName: string;
     regexPattern: string;
+    user_ids?: string[];
   }[]> {
     try {
       const result = await this.db.send(new ScanCommand({
         TableName: this.regexTableName,
       }));
 
-      return result.Items as {
+      return (result.Items || []).map(item => ({
+        ...item,
+        user_ids: item.user_ids ? Array.from(item.user_ids) : undefined
+      })) as {
         serverId: string;
         webhookName: string;
         regexPattern: string;
+        user_ids?: string[];
       }[];
     } catch (error) {
       console.error("Error fetching regex:", error);
@@ -270,7 +305,7 @@ class DynamoDatabase {
     }
   }
 
-  async getRegexesByServer(serverId: string): Promise<{ serverId: string; regexPattern: string; webhookName: string }[]> {
+  async getRegexesByServer(serverId: string): Promise<{ serverId: string; regexPattern: string; webhookName: string; user_ids?: string[] }[]> {
     try {
       // With the composite key, we can use a more efficient query operation
       const result = await this.db.send(new QueryCommand({
@@ -279,7 +314,10 @@ class DynamoDatabase {
         ExpressionAttributeValues: { ":serverId": serverId },
       }));
 
-      return result.Items as { serverId: string; regexPattern: string; webhookName: string }[] || [];
+      return (result.Items || []).map(item => ({
+        ...item,
+        user_ids: item.user_ids ? Array.from(item.user_ids) : undefined
+      })) as { serverId: string; regexPattern: string; webhookName: string; user_ids?: string[] }[];
     } catch (error) {
       console.error(`Error fetching regexes for server ${serverId}:`, error);
       throw error;
@@ -308,6 +346,7 @@ class DynamoDatabase {
     pattern: string,
     updates: {
       webhookName?: string;
+      user_ids?: string[];
     }
   ): Promise<void> {
     const updateExpressions: string[] = [];
@@ -315,9 +354,17 @@ class DynamoDatabase {
     const expressionAttributeValues: Record<string, any> = {};
 
     Object.entries(updates).forEach(([key, value], index) => {
-      updateExpressions.push(`#${key} = :val${index}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:val${index}`] = value;
+      if (key === 'user_ids' && Array.isArray(value)) {
+        // Always store as Set, default to ['All'] if empty
+        const userIds = value.length > 0 ? value : ['All'];
+        updateExpressions.push(`#${key} = :val${index}`);
+        expressionAttributeNames[`#${key}`] = key;
+        expressionAttributeValues[`:val${index}`] = new Set(userIds);
+      } else if (value !== undefined) {
+        updateExpressions.push(`#${key} = :val${index}`);
+        expressionAttributeNames[`#${key}`] = key;
+        expressionAttributeValues[`:val${index}`] = value;
+      }
     });
 
     if (updateExpressions.length === 0) return;
@@ -346,14 +393,19 @@ class DynamoDatabase {
     }
   }
 
-  async getRegex(serverId: string, regexPattern: string): Promise<{ serverId: string; regexPattern: string; webhookName: string } | null> {
+  async getRegex(serverId: string, regexPattern: string): Promise<{ serverId: string; regexPattern: string; webhookName: string; user_ids?: string[] } | null> {
     try {
       const result = await this.db.send(new GetCommand({
         TableName: this.regexTableName,
         Key: { serverId, regexPattern }
       }));
 
-      return result.Item as { serverId: string; regexPattern: string; webhookName: string } || null;
+      if (!result.Item) return null;
+      
+      return {
+        ...result.Item,
+        user_ids: result.Item.user_ids ? Array.from(result.Item.user_ids) : undefined
+      } as { serverId: string; regexPattern: string; webhookName: string; user_ids?: string[] };
     } catch (error) {
       console.error(`Error fetching regex pattern "${regexPattern}" for server ${serverId}:`, error);
       throw error;
@@ -367,6 +419,13 @@ class DynamoDatabase {
     status: "active" | "disabled",
     totalUsers: number,
   ): Promise<void> {
+    // Validate server status before persistence
+    try {
+      validateServerStatus(status);
+    } catch (error) {
+      throw new Error(`Invalid server status: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
     await this.db.send(new PutCommand({
       TableName: this.serversTableName,
       Item: { serverId, name, status, totalUsers },
@@ -427,6 +486,15 @@ class DynamoDatabase {
       email?: string;
     }
   ): Promise<void> {
+    // Validate server status if it's being updated
+    if (updates.status !== undefined) {
+      try {
+        validateServerStatus(updates.status);
+      } catch (error) {
+        throw new Error(`Invalid server status: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    
     const updateExpressions: string[] = [];
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {};

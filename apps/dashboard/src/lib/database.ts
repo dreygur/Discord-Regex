@@ -13,15 +13,18 @@ let config: IDBClientOptions = {
   serversTableName: "Servers"
 };
 
-if (region && endpoint && accessKeyId && secretAccessKey) {
-  config = {
-    ...config,
-    region,
-    endpoint,
-    credentials: {
-      accessKeyId,
-      secretAccessKey
-    }
+if (region) {
+  config.region = region;
+}
+
+if (endpoint) {
+  config.endpoint = endpoint;
+}
+
+if (accessKeyId && secretAccessKey) {
+  config.credentials = {
+    accessKeyId,
+    secretAccessKey
   };
 }
 

@@ -1,0 +1,50 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo "Installing pnpm..."
+      - corepack enable
+      - corepack prepare pnpm@latest --activate
+      - pnpm --version
+      
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+      - echo "Installing dependencies..."
+      - pnpm install --no-frozen-lockfile
+      
+      - echo "Running tests..."
+      - pnpm test --filter=@discord/bot --filter=@database/client --run
+      
+      - echo "Tests passed! Proceeding with build..."
+      
+  build:
+    commands:
+      - echo "Fetching environment variables from SSM..."
+      - APP_ENV_CONTENT=$(aws ssm get-parameter --name "bot" --with-decryption --query "Parameter.Value" --output text)
+      - echo "Building Docker image..."
+      - BUILD_ARGS=$(echo "$APP_ENV_CONTENT" | sed -e 's/^/--build-arg /')
+      - docker build -t $ECR_REPO_URI:latest -f apps/discord/Dockerfile . $BUILD_ARGS
+      - docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      
+  post_build:
+    commands:
+      - echo "Pushing Docker images to ECR..."
+      - docker push $ECR_REPO_URI:latest
+      - docker push $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo "Creating imagedefinitions.json..."
+      - printf '[{"name":"BotContainer","imageUri":"%s"}]' $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
+      - cat imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+
+cache:
+  paths:
+    - 'node_modules/**/*'
+    - '.pnpm-store/**/*'
