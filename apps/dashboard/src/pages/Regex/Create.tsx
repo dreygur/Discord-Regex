@@ -11,6 +11,7 @@ export default function CreateRegex() {
   const [serverId, setServerId] = useState("");
   const [regexPattern, setRegexPattern] = useState("");
   const [webhookName, setWebhookName] = useState("");
+  const [userIds, setUserIds] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -19,10 +20,11 @@ export default function CreateRegex() {
 
     setLoading(true);
     try {
+      const user_ids = userIds.trim() ? (userIds.trim().toLowerCase() === 'all' ? ['All'] : userIds.split(',').map(id => id.trim()).filter(id => id)) : ['All'];
       await fetch(`/api/regex`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhookName, regexPattern, serverId })
+        body: JSON.stringify({ webhookName, regexPattern, serverId, user_ids })
       });
 
       toast.success("Regex created successfully", { id: "regex" });
@@ -47,6 +49,11 @@ export default function CreateRegex() {
         <div className="flex flex-col gap-2">
           <Label>Regex Pattern</Label>
           <Input type="text" value={regexPattern} onChange={e => setRegexPattern(e.target.value.trim())} required />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>User IDs (comma-separated)</Label>
+          <Input type="text" value={userIds} onChange={e => setUserIds(e.target.value)} placeholder="Enter 'All' for all users, or comma-separated user IDs" />
         </div>
 
         <div className="flex flex-col gap-2">
