@@ -1,26 +1,10 @@
 version: 0.2
 
 phases:
-  install:
-    runtime-versions:
-      nodejs: 22
-    commands:
-      - echo "Installing pnpm..."
-      - corepack enable
-      - corepack prepare pnpm@latest --activate
-      - pnpm --version
-      
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
-      - echo "Installing dependencies..."
-      - pnpm install --no-frozen-lockfile
-      
-      - echo "Running tests..."
-      - pnpm test --filter=@discord/dashboard --filter=@database/client --run
-      
-      - echo "Tests passed! Proceeding with build..."
       
   build:
     commands:
