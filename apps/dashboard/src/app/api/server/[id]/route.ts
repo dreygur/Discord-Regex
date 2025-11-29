@@ -41,7 +41,7 @@ export async function PUT(
       name?: string; 
       status?: 'active' | 'disabled'; 
       totalUsers?: number;
-      email?: string;
+      email?: string | null;
     } = {};
     if (body.name !== undefined) {
       updates.name = validateServerName(body.name);
@@ -53,7 +53,12 @@ export async function PUT(
       updates.totalUsers = validateTotalUsers(body.totalUsers);
     }
     if (body.email !== undefined) {
-      updates.email = validateEmail(body.email);
+      // Allow null or empty string to remove the email
+      if (body.email === null || body.email === '') {
+        updates.email = null;
+      } else {
+        updates.email = validateEmail(body.email);
+      }
     }
     
     console.log({ serverId, updates });
