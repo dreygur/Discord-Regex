@@ -158,3 +158,28 @@ export function validateUserIds(userIds: unknown): string[] | undefined {
     return sanitized;
   });
 }
+
+/**
+ * Validates and sanitizes an email address
+ * @param email - The email to validate
+ * @returns Sanitized email or undefined if empty
+ * @throws Error if invalid format
+ */
+export function validateEmail(email: unknown): string | undefined {
+  if (email === null || email === undefined || email === '') {
+    return undefined;
+  }
+  const sanitized = sanitizeString(email);
+  if (sanitized.length === 0) {
+    return undefined;
+  }
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(sanitized)) {
+    throw new Error('Invalid email format');
+  }
+  if (sanitized.length > 254) {
+    throw new Error('Email must be 254 characters or less');
+  }
+  return sanitized;
+}

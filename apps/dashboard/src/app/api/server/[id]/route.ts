@@ -4,7 +4,8 @@ import {
   validateServerId, 
   validateServerName, 
   validateServerStatus, 
-  validateTotalUsers 
+  validateTotalUsers,
+  validateEmail
 } from "@/lib/sanitize";
 
 export async function GET(
@@ -50,6 +51,9 @@ export async function PUT(
     }
     if (body.totalUsers !== undefined) {
       updates.totalUsers = validateTotalUsers(body.totalUsers);
+    }
+    if (body.email !== undefined) {
+      updates.email = validateEmail(body.email);
     }
     
     console.log({ serverId, updates });
