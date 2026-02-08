@@ -7,21 +7,24 @@ const endpoint = process.env.NEXT_ENDPOINT;
 const accessKeyId = process.env.NEXT_ACCESS_KEY_ID;
 const secretAccessKey = process.env.NEXT_SECRET_ACCESS_KEY;
 
-let config: IDBClientOptions = {
+const config: IDBClientOptions = {
   webhooksTableName: "Webhooks",
   regexTableName: "RegexPatterns",
   serversTableName: "Servers"
 };
 
-if (region && endpoint && accessKeyId && secretAccessKey) {
-  config = {
-    ...config,
-    region,
-    endpoint,
-    credentials: {
-      accessKeyId,
-      secretAccessKey
-    }
+if (region) {
+  config.region = region;
+}
+
+if (endpoint) {
+  config.endpoint = endpoint;
+}
+
+if (accessKeyId && secretAccessKey) {
+  config.credentials = {
+    accessKeyId,
+    secretAccessKey
   };
 }
 

@@ -45,14 +45,15 @@ RUN pnpm install --no-frozen-lockfile
 
 # Build the project
 COPY --from=builder /app/out/full/ .
-COPY pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
 RUN pnpm turbo run build
 
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+
+# Install wget for health checks
+RUN apk add --no-cache wget
 
 # Don't run production as root
 RUN addgroup --system --gid 1001 nodejs

@@ -8,14 +8,24 @@ import { Label } from "@/components/ui/label";
 import Loading from "../../app/loading";
 import toast from "react-hot-toast";
 
+const debug = {
+  log: (...args: unknown[]) => {
+    if (process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log(...args);
+    }
+  }
+};
+
 interface Regex {
   serverId: string;
   webhookName: string;
   regexPattern: string;
+  user_ids?: string[];
 }
 export default function UpdateRegex({ id, pattern }: { id: string; pattern: string }) {
   const router = useRouter();
   const [regex, setRegex] = useState<Regex | null>(null);
+  const [userIdsInput, setUserIdsInput] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,6 +40,7 @@ export default function UpdateRegex({ id, pattern }: { id: string; pattern: stri
       if (!res.ok) throw new Error("Failed to fetch regex");
       const data = await res.json();
       setRegex(data);
+      setUserIdsInput(data.user_ids ? (data.user_ids.includes('All') ? 'All' : data.user_ids.join(', ')) : 'All');
     } catch (error) {
       toast.error("Error fetching regex data", { id: "regex" });
       console.error(error);
@@ -42,10 +53,12 @@ export default function UpdateRegex({ id, pattern }: { id: string; pattern: stri
 
     setLoading(true);
     try {
+      const payload = { webhookName: regex.webhookName, user_ids: regex.user_ids || ['All'] };
+      debug.log('Sending payload:', payload);
       const res = await fetch(`/api/regex/${id}/${pattern}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webhookName: regex.webhookName, serverId: regex.serverId, regexPattern: regex.regexPattern })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         toast.success("Regex updated successfully", { id: "regex" });
@@ -77,6 +90,25 @@ export default function UpdateRegex({ id, pattern }: { id: string; pattern: stri
         <div className="flex flex-col gap-2">
           <Label>Regex Pattern</Label>
           <Input value={regex.regexPattern} onChange={e => setRegex({ ...regex, regexPattern: e.target.value.trim() })} disabled />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>User IDs (comma-separated)</Label>
+          <Input 
+            value={userIdsInput} 
+            onChange={e => {
+              const value = e.target.value;
+              setUserIdsInput(value);
+              
+              if (!value.trim() || value.trim().toLowerCase() === 'all') {
+                setRegex({ ...regex, user_ids: ['All'] });
+              } else {
+                const userIds = value.split(',').map(id => id.trim()).filter(id => id);
+                setRegex({ ...regex, user_ids: userIds.length > 0 ? userIds : ['All'] });
+              }
+            }} 
+            placeholder="Enter 'All' for all users, or comma-separated user IDs"
+          />
         </div>
 
         <div className="flex flex-col gap-2">

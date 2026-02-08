@@ -71,13 +71,13 @@ export class DashboardStack extends cdk.Stack {
     // Attach Security Group to Fargate Service
     service.connections.addSecurityGroup(securityGroup);
 
-    // Add container definition - this is essential
+    // Add container definition with health check endpoint
     const container = taskDefinition.addContainer('DashboardContainer', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepo),
       healthCheck: {
         command: [
           'CMD-SHELL',
-          'pgrep -f "node" || exit 1'
+          'wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1'
         ],
         interval: cdk.Duration.seconds(30),
         retries: 3,
@@ -108,46 +108,14 @@ export class DashboardStack extends cdk.Stack {
     const buildOutput = new codepipeline.Artifact('DashboardCodeBuild');
     const buildProject = new codebuild.PipelineProject(this, 'DashboardProject', {
       environment: {
-        buildImage: codebuild.LinuxBuildImage.STANDARD_6_0,
+        buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
         privileged: true, // Required for Docker
         environmentVariables: {
           ECR_REPO_URI: { value: ecrRepo.repositoryUri },
           AWS_ACCOUNT_ID: { value: cdk.Stack.of(this).account },
         },
       },
-      buildSpec: codebuild.BuildSpec.fromObject({
-        version: '0.2',
-        phases: {
-          pre_build: {
-            commands: [
-              'echo "Logging in to ECR..."',
-              'aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI',
-            ],
-          },
-          build: {
-            commands: [
-              'APP_ENV_CONTENT=$(aws ssm get-parameter --name "dashboard" --with-decryption --query "Parameter.Value" --output text)',
-              'echo "APP_ENV_CONTENT: $APP_ENV_CONTENT"',
-
-              "BUILD_ARGS=$(echo \"$APP_ENV_CONTENT\" | sed -e 's/^/--build-arg /')",
-              'echo "env: $BUILD_ARGS"',
-
-              'docker build -t $ECR_REPO_URI:latest -f apps/dashboard/Dockerfile . $BUILD_ARGS',
-              'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-            ],
-          },
-          post_build: {
-            commands: [
-              'docker push $ECR_REPO_URI:latest',
-              'docker push $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION',
-              'printf "[{\\"name\\":\\"DashboardContainer\\",\\"imageUri\\":\\"%s\\"}]" $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json',
-            ],
-          },
-        },
-        artifacts: {
-          files: ['imagedefinitions.json'],
-        },
-      }),
+      buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec-dashboard.yml'),
     });
 
     // Grant build project permissions
@@ -164,14 +132,18 @@ export class DashboardStack extends cdk.Stack {
       'dashboard'
     ).grantRead(buildProject);
 
-    // Attach Target Group to Service
+    // Attach Target Group to Service with health check endpoint
     listener.addTargets('DashboardTarget', {
       protocol: elbv2.ApplicationProtocol.HTTP,
       port: 3000,
       targets: [service],
       healthCheck: {
-        path: '/',
+        path: '/api/health',
         interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(5),
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3,
+        healthyHttpCodes: '200',
       },
     });
 

@@ -1,17 +1,33 @@
 import { database } from "@/lib/database";
 import { NextRequest, NextResponse } from "next/server";
+import { 
+  validateServerId, 
+  validateWebhookName, 
+  sanitizeDataTemplate 
+} from "@/lib/sanitize";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, url, serverId, data } = await req.json();
-    if (!name || !url || !serverId) {
-      return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
+    const body = await req.json();
+    
+    // Validate and sanitize all inputs
+    const name = validateWebhookName(body.name);
+    const serverId = validateServerId(body.serverId);
+    const data = sanitizeDataTemplate(body.data) || '';
+    
+    // URL validation is handled by database.createWebhook
+    if (!body.url || typeof body.url !== 'string') {
+      return NextResponse.json({ message: "Webhook URL is required" }, { status: 400 });
     }
 
-    await database.createWebhook(name, url, serverId, data);
+    await database.createWebhook(name, body.url, serverId, data);
     return NextResponse.json({ message: "Webhook created successfully" }, { status: 201 });
   } catch (error) {
     console.error("Error creating webhook:", error);
+    // Return validation errors with 400 status
+    if (error instanceof Error) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
     return NextResponse.json({ message: "Failed to create webhook" }, { status: 500 });
   }
 }
