@@ -1,2 +1,2 @@
-export { DynamoDatabase } from './database';
-export { validateRegexPattern, validateWebhookUrl } from './validation';
+export { DynamoDatabase } from "./database";
+export { validateRegexPattern, validateWebhookUrl } from "./validation";
